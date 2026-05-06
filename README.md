@@ -1,2 +1,2 @@
-# Shape-to-Melody
+# Shape to Melody
 Draw something, hear melody. 
