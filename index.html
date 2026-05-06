@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shape to Melody</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Shape to Melody</h1>
+      <p>画出形状，听见旋律</p>
+    </header>
+
+    <div id="main">
+      <!-- Left sidebar: drawing controls -->
+      <div id="sidebar-left">
+        <div class="panel">
+          <h3>绘画工具</h3>
+          <div class="tool-grid" id="tool-btns">
+            <button class="tool-btn active" data-mode="freehand">画笔</button>
+            <button class="tool-btn" data-mode="line">直线</button>
+            <button class="tool-btn" data-mode="rect">矩形</button>
+            <button class="tool-btn" data-mode="circle">圆形</button>
+            <button class="tool-btn" data-mode="heart">心形</button>
+            <button class="tool-btn" data-mode="triangle">三角</button>
+            <button class="tool-btn" data-mode="star">星形</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>画布模式</h3>
+          <div class="btn-group-v" id="canvas-mode-btns">
+            <button class="mode-btn active" data-mode="normal">普通</button>
+            <button class="mode-btn" data-mode="symmetric">左右对称</button>
+            <button class="mode-btn" data-mode="kaleidoscope">万花筒</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>笔刷大小 &nbsp;<span id="brush-size-val">6</span></h3>
+          <input type="range" id="brush-size" min="2" max="24" value="6">
+        </div>
+
+        <div class="panel">
+          <h3>颜色</h3>
+          <div class="color-row">
+            <div class="color-swatch active" data-color="#ffffff" style="background:#ffffff"></div>
+            <div class="color-swatch" data-color="#ff6b6b" style="background:#ff6b6b"></div>
+            <div class="color-swatch" data-color="#ffd93d" style="background:#ffd93d"></div>
+            <div class="color-swatch" data-color="#6bcb77" style="background:#6bcb77"></div>
+            <div class="color-swatch" data-color="#4d96ff" style="background:#4d96ff"></div>
+            <div class="color-swatch" data-color="#c77dff" style="background:#c77dff"></div>
+          </div>
+        </div>
+
+        <button id="btn-clear" class="btn-secondary full-width">清除画布</button>
+      </div>
+
+      <!-- Canvas area -->
+      <div id="canvas-area">
+        <!-- View toggle (hidden until first conversion) -->
+        <div id="view-toggle" class="hidden">
+          <button class="view-btn active" data-view="drawing">🎨 原画</button>
+          <button class="view-btn" data-view="pianoroll">🎹 钢琴卷帘</button>
+        </div>
+
+        <div id="canvas-container">
+          <canvas id="main-canvas"></canvas>
+          <canvas id="piano-roll-canvas" class="hidden"></canvas>
+          <!-- Partial conversion overlay band -->
+          <div id="partial-overlay" class="hidden">
+            <div id="partial-band">
+              <span class="band-label">↕ 拖动调整范围</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right sidebar: playback controls -->
+      <div id="sidebar-right">
+        <div class="panel">
+          <h3>转换方式</h3>
+          <div class="btn-group-v" id="convert-mode-btns">
+            <button class="mode-btn active" data-mode="full">全部转换</button>
+            <button class="mode-btn" data-mode="partial">部分转换</button>
+            <button class="mode-btn" data-mode="random">随机转换</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>采样间隔 &nbsp;<span id="sampling-val">5</span>px</h3>
+          <input type="range" id="sampling-interval" min="1" max="100" value="5">
+        </div>
+
+        <div class="panel">
+          <h3>乐器</h3>
+          <select id="instrument-select">
+            <option value="piano">钢琴</option>
+            <option value="epiano">电钢琴</option>
+            <option value="organ">风琴</option>
+            <option value="strings">弦乐</option>
+            <option value="pluck">拨弦</option>
+            <option value="bell">钟声</option>
+            <option value="marimba">马林巴</option>
+            <option value="xylophone">木琴</option>
+          </select>
+        </div>
+
+        <div class="panel">
+          <h3>音阶</h3>
+          <select id="scale-select">
+            <option value="pentatonic">五声音阶</option>
+            <option value="major">大调</option>
+            <option value="minor">小调</option>
+            <option value="chromatic">半音阶</option>
+          </select>
+        </div>
+
+        <div class="panel">
+          <h3>速度 &nbsp;<span id="bpm-val">120</span> BPM</h3>
+          <input type="range" id="bpm" min="40" max="240" value="120">
+        </div>
+
+        <div id="play-controls">
+          <button id="btn-convert" class="btn-primary full-width">⟳ 转换</button>
+          <button id="btn-play" class="btn-primary full-width" disabled>▶ 播放</button>
+          <button id="btn-stop" class="btn-secondary full-width">■ 停止</button>
+        </div>
+
+        <div id="status-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/converter.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/pianoroll.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
