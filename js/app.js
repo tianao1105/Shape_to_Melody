@@ -7,25 +7,22 @@ class App {
 
     this.convertMode      = 'full'
     this.samplingInterval = 5
-    this._currentView     = 'drawing'  // 'drawing' | 'pianoroll'
-    this._lastNotes       = []
+    this._currentView     = 'drawing'
+    this._lastNotes       = []   // [{note, x, y}, ...]
 
-    // Partial band drag state
     this._partialDragging = false
     this._bandStartY      = 0
     this._bandStartTop    = 0
 
-    // Init piano roll canvas (same size as main canvas)
+    // Piano roll canvas matches main canvas size
     const prCanvas = document.getElementById('piano-roll-canvas')
     const { width, height } = this.canvas.getSize()
     prCanvas.width  = width
     prCanvas.height = height
     this.pianoRoll.init(prCanvas)
 
-    // Pre-warm audio context so first play has no delay
     this.player.warmup()
 
-    // Callbacks
     this.player.onStop = () => {
       this.pianoRoll.stop()
       this._setStatus('')
@@ -39,8 +36,8 @@ class App {
   /* ── UI bindings ─────────────────────────────────────────── */
 
   _bindUI() {
-    this._bindModeGroup('tool-btns',        mode => this.canvas.setDrawTool(mode), 'tool-btn')
-    this._bindModeGroup('canvas-mode-btns', mode => this.canvas.setMode(mode))
+    this._bindModeGroup('tool-btns',         mode => this.canvas.setDrawTool(mode), 'tool-btn')
+    this._bindModeGroup('canvas-mode-btns',  mode => this.canvas.setMode(mode))
     this._bindModeGroup('convert-mode-btns', mode => {
       this.convertMode = mode
       this._togglePartialOverlay(mode === 'partial')
@@ -78,7 +75,6 @@ class App {
 
     document.getElementById('scale-select').addEventListener('change', e => {
       this.converter.setScale(e.target.value)
-      // Re-convert with new scale so piano keys reflect the change immediately
       if (this._lastNotes.length > 0) this._convert()
       else this._refreshPianoRoll()
     })
@@ -90,8 +86,8 @@ class App {
     })
 
     document.getElementById('btn-convert').addEventListener('click', () => this._convert())
-    document.getElementById('btn-play').addEventListener('click', () => this._play())
-    document.getElementById('btn-stop').addEventListener('click', () => {
+    document.getElementById('btn-play').addEventListener('click',   () => this._play())
+    document.getElementById('btn-stop').addEventListener('click',   () => {
       this.player.stop()
       this._setStatus('')
     })
@@ -127,25 +123,19 @@ class App {
     this._currentView = view
     const mainCanvas = document.getElementById('main-canvas')
     const prCanvas   = document.getElementById('piano-roll-canvas')
-    const overlay    = document.getElementById('partial-overlay')
 
     if (view === 'pianoroll') {
       mainCanvas.classList.add('hidden')
       prCanvas.classList.remove('hidden')
-      overlay.classList.add('hidden')   // hide band in piano roll view
-
-      // Show static preview if we have notes and aren't currently playing
+      document.getElementById('partial-overlay').classList.add('hidden')
       if (this._lastNotes.length > 0 && !this.player.isPlaying) {
-        this.pianoRoll.setup(this._lastNotes, this.converter.notes, this.player.bpm)
+        this._setupPianoRoll()
         this.pianoRoll.drawStatic()
       }
     } else {
       prCanvas.classList.add('hidden')
       mainCanvas.classList.remove('hidden')
-      // Restore partial overlay if in partial mode
-      if (this.convertMode === 'partial') {
-        this._togglePartialOverlay(true)
-      }
+      if (this.convertMode === 'partial') this._togglePartialOverlay(true)
     }
   }
 
@@ -161,27 +151,21 @@ class App {
       this._bandStartTop    = band.offsetTop
       e.preventDefault()
     })
-
     document.addEventListener('mousemove', e => {
       if (!this._partialDragging) return
       const maxTop = container.clientHeight - band.offsetHeight
       const newTop = Math.max(0, Math.min(maxTop, this._bandStartTop + e.clientY - this._bandStartY))
-      band.style.top       = newTop + 'px'
-      band.style.transform = 'none'
+      band.style.top = newTop + 'px'; band.style.transform = 'none'
     })
-
     document.addEventListener('mouseup', () => { this._partialDragging = false })
   }
 
   _togglePartialOverlay(show) {
     const overlay = document.getElementById('partial-overlay')
-    // Never show overlay when in piano roll view
     if (show && this._currentView !== 'pianoroll') {
-      overlay.classList.remove('hidden')
-      overlay.classList.add('active')
+      overlay.classList.remove('hidden'); overlay.classList.add('active')
     } else {
-      overlay.classList.add('hidden')
-      overlay.classList.remove('active')
+      overlay.classList.add('hidden'); overlay.classList.remove('active')
     }
   }
 
@@ -196,11 +180,22 @@ class App {
     }
   }
 
-  /* ── Piano roll refresh ─────────────────────────────────── */
+  /* ── Piano roll helpers ──────────────────────────────────── */
+
+  _setupPianoRoll(totalTime) {
+    const { width, height } = this.canvas.getSize()
+    this.pianoRoll.setup(
+      this._lastNotes,
+      this.converter.notes,
+      this.player.bpm,
+      width, height,
+      totalTime ?? this.player.getTotalTime()
+    )
+  }
 
   _refreshPianoRoll() {
     if (this._currentView !== 'pianoroll' || this._lastNotes.length === 0) return
-    this.pianoRoll.setup(this._lastNotes, this.converter.notes, this.player.bpm)
+    this._setupPianoRoll()
     if (!this.player.isPlaying) this.pianoRoll.drawStatic()
   }
 
@@ -213,8 +208,7 @@ class App {
     const options = { interval: this.samplingInterval }
     if (this.convertMode === 'partial') {
       const { yMin, yMax } = this._getPartialRange()
-      options.yMin = yMin
-      options.yMax = yMax
+      options.yMin = yMin; options.yMax = yMax
     }
 
     const notes = this.converter.convert(strokes, height, this.convertMode, options)
@@ -228,9 +222,8 @@ class App {
     this._showViewToggle()
     document.getElementById('btn-play').disabled = false
 
-    // Refresh piano roll static preview if in that view
     if (this._currentView === 'pianoroll') {
-      this.pianoRoll.setup(notes, this.converter.notes, this.player.bpm)
+      this._setupPianoRoll()
       this.pianoRoll.drawStatic()
     }
 
@@ -244,17 +237,17 @@ class App {
 
     this._setStatus(`播放中… ${this._lastNotes.length} 个音符`, 'playing')
 
+    const { width } = this.canvas.getSize()
+    await this.player.play(this._lastNotes, width)
+
     if (this._currentView === 'pianoroll') {
-      this.pianoRoll.setup(this._lastNotes, this.converter.notes, this.player.bpm)
-      await this.player.play(this._lastNotes)
+      this._setupPianoRoll(this.player.getTotalTime())
       this.pianoRoll.start()
-    } else {
-      await this.player.play(this._lastNotes)
     }
   }
 
   _setStatus(msg, type = '') {
-    const bar   = document.getElementById('status-bar')
+    const bar = document.getElementById('status-bar')
     bar.textContent = msg
     bar.className   = type
   }

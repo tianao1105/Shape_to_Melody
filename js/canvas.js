@@ -85,7 +85,19 @@ class CanvasManager {
     if (!this.isDrawing) return
 
     if (this.drawTool === 'freehand') {
-      if (this._currentStroke.length > 0) this.strokes.push([...this._currentStroke])
+      if (this._currentStroke.length > 0) {
+        const W = this.canvas.width, H = this.canvas.height
+        const s = this._currentStroke
+        this.strokes.push([...s])
+        if (this.mode === 'symmetric') {
+          this.strokes.push(s.map(p => ({ x: W - p.x, y: p.y })))
+        }
+        if (this.mode === 'kaleidoscope') {
+          this.strokes.push(s.map(p => ({ x: W - p.x, y:     p.y })))
+          this.strokes.push(s.map(p => ({ x:     p.x, y: H - p.y })))
+          this.strokes.push(s.map(p => ({ x: W - p.x, y: H - p.y })))
+        }
+      }
       this._currentStroke = []
     } else if (this._shapeStart) {
       const end = { x: this.lastX, y: this.lastY }
@@ -95,8 +107,8 @@ class CanvasManager {
       if (dx > 5 || dy > 5) {
         // Commit final render and record stroke points for converter
         this.ctx.putImageData(this._snapshot, 0, 0)
-        const pts = this._renderShape(this._shapeStart, end)
-        this.strokes.push(pts)
+        const allPts = this._renderShape(this._shapeStart, end)
+        allPts.forEach(s => this.strokes.push(s))
       }
       this._shapeStart = null
       this._snapshot   = null
@@ -131,10 +143,10 @@ class CanvasManager {
 
   /* ── Shape tools ─────────────────────────────────────────── */
 
-  // Renders the shape and returns its point array (original, un-mirrored)
+  // Renders the shape and returns all strokes (original + mirrored)
   _renderShape(start, end) {
     const pts = this._shapePoints(start, end)
-    if (pts.length === 0) return pts
+    if (pts.length === 0) return []
 
     const W = this.canvas.width, H = this.canvas.height
     this.ctx.save()
@@ -150,17 +162,18 @@ class CanvasManager {
       this.ctx.stroke()
     }
 
-    drawPath(pts)
+    const allStrokes = [pts]
     if (this.mode === 'symmetric') {
-      drawPath(pts.map(p => ({ x: W - p.x, y: p.y })))
+      allStrokes.push(pts.map(p => ({ x: W - p.x, y: p.y })))
     }
     if (this.mode === 'kaleidoscope') {
-      drawPath(pts.map(p => ({ x: W - p.x, y:     p.y })))
-      drawPath(pts.map(p => ({ x:     p.x, y: H - p.y })))
-      drawPath(pts.map(p => ({ x: W - p.x, y: H - p.y })))
+      allStrokes.push(pts.map(p => ({ x: W - p.x, y:     p.y })))
+      allStrokes.push(pts.map(p => ({ x:     p.x, y: H - p.y })))
+      allStrokes.push(pts.map(p => ({ x: W - p.x, y: H - p.y })))
     }
+    allStrokes.forEach(drawPath)
     this.ctx.restore()
-    return pts
+    return allStrokes
   }
 
   _shapePoints(start, end) {
@@ -232,16 +245,25 @@ class CanvasManager {
     return pts
   }
 
-  _starPts(cx, cy, r, arms = 5, n = 5) {
+  _starPts(cx, cy, r, arms = 5, n = 30) {
     if (r < 2) return []
     const innerR = r * 0.42
     const total  = arms * 2
-    const pts = []
+    const verts = []
     for (let i = 0; i <= total; i++) {
       const angle  = (i / total) * Math.PI * 2 - Math.PI / 2
       const radius = i % 2 === 0 ? r : innerR
-      pts.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) })
+      verts.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) })
     }
+    const pts = []
+    for (let i = 0; i < verts.length - 1; i++) {
+      const a = verts[i], b = verts[i + 1]
+      for (let k = 0; k < n; k++) {
+        const t = k / n
+        pts.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
+      }
+    }
+    pts.push(verts[verts.length - 1])
     return pts
   }
 
