@@ -143,39 +143,85 @@ class PianoRoll {
   }
 
   _drawKeys(c) {
-    const ctx = this.ctx
-    const pw  = this.pianoW
-    const rh  = this.rowH
+    const ctx  = this.ctx
+    const pw   = this.pianoW
+    const rh   = this.rowH
+    const H    = this.canvas.height
+    const bkW  = pw * 0.62          // black key width
+    const bkPad = Math.max(0.5, rh * 0.07)
 
+    // White key base
+    ctx.fillStyle = '#f5f0e6'
+    ctx.fillRect(0, 0, pw, H)
+
+    // White key separators and active highlights
     this.allNotes.forEach((note, idx) => {
       const y      = idx * rh
       const isBlk  = note.includes('#')
       const active = this._active.has(note)
+      if (isBlk) return
 
-      if (isBlk) {
-        ctx.fillStyle = c.bg
-        ctx.fillRect(0, y, pw - 8, rh)
-        ctx.fillStyle = active ? c.accentH : c.surface
-        ctx.fillRect(pw - 24, y + 1, 15, rh - 2)
-      } else {
-        ctx.fillStyle = active ? c.accent : c.surface2
-        ctx.fillRect(0, y, pw - 1, rh)
+      if (active) {
+        ctx.fillStyle = c.accent + '44'
+        ctx.fillRect(0, y, pw, rh)
       }
-
-      ctx.strokeStyle = c.bg
+      // Bottom edge line between white keys
+      ctx.strokeStyle = '#c9bfab'
       ctx.lineWidth   = 0.5
-      ctx.strokeRect(0, y, pw - 1, rh)
+      ctx.beginPath(); ctx.moveTo(0, y + rh); ctx.lineTo(pw, y + rh); ctx.stroke()
+    })
 
-      if (rh >= 9) {
-        const isC = !isBlk && note[0] === 'C'
-        if (isC || rh >= 13) {
-          ctx.fillStyle    = active ? c.text : c.textMuted
-          ctx.font         = `${Math.min(11, Math.floor(rh * 0.62))}px monospace`
-          ctx.textAlign    = 'right'
-          ctx.textBaseline = 'middle'
-          ctx.fillText(note, pw - 5, y + rh / 2)
-        }
+    // Black keys (drawn on top of white key base)
+    this.allNotes.forEach((note, idx) => {
+      const y      = idx * rh
+      const isBlk  = note.includes('#')
+      if (!isBlk) return
+      const active = this._active.has(note)
+
+      // Body gradient
+      const grad = ctx.createLinearGradient(0, y, bkW, y)
+      if (active) {
+        grad.addColorStop(0,   '#555')
+        grad.addColorStop(1,   '#888')
+      } else {
+        grad.addColorStop(0,   '#1c1c1c')
+        grad.addColorStop(0.6, '#2d2d2d')
+        grad.addColorStop(1,   '#484848')
+      }
+      ctx.fillStyle = grad
+      _rr(ctx, 0, y + bkPad, bkW, rh - bkPad * 2, 2)
+      ctx.fill()
+
+      // Top highlight strip
+      if (!active) {
+        ctx.fillStyle = 'rgba(255,255,255,0.14)'
+        _rr(ctx, 2, y + bkPad + 1, bkW - 4, (rh - bkPad * 2) * 0.28, 1)
+        ctx.fill()
       }
     })
+
+    // Note labels
+    if (rh >= 9) {
+      this.allNotes.forEach((note, idx) => {
+        const y      = idx * rh
+        const isBlk  = note.includes('#')
+        const active = this._active.has(note)
+        const isC    = !isBlk && note[0] === 'C'
+        if (!isC && rh < 13) return
+
+        ctx.fillStyle    = isBlk
+          ? (active ? '#fff' : 'rgba(255,255,255,0.55)')
+          : (active ? c.accent : '#8a7c68')
+        ctx.font         = `${Math.min(10, Math.floor(rh * 0.60))}px monospace`
+        ctx.textAlign    = 'right'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(note, pw - 4, y + rh / 2)
+      })
+    }
+
+    // Right border
+    ctx.strokeStyle = c.border
+    ctx.lineWidth   = 1
+    ctx.beginPath(); ctx.moveTo(pw, 0); ctx.lineTo(pw, H); ctx.stroke()
   }
 }

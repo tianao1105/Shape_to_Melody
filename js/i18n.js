@@ -49,6 +49,7 @@ const TRANSLATIONS = {
     'btn-convert':      '⟳ 转换',
     'btn-play':         '▶ 播放',
     'btn-stop':         '■ 停止',
+    'btn-export':       '↓ 导出 MIDI',
     'status-empty':     '画布是空的，请先绘画',
     'status-converted': '已转换 {n} 个音符，点击播放',
     'status-playing':   '播放中… {n} 个音符',
@@ -103,6 +104,7 @@ const TRANSLATIONS = {
     'btn-convert':      '⟳ Convert',
     'btn-play':         '▶ Play',
     'btn-stop':         '■ Stop',
+    'btn-export':       '↓ Export MIDI',
     'status-empty':     'Canvas is empty, draw something first',
     'status-converted': 'Converted {n} notes, click play',
     'status-playing':   'Playing… {n} notes',
@@ -129,3 +131,5 @@ function setLang(lang) {
 function toggleLang() {
   setLang(_lang === 'zh' ? 'en' : 'zh')
 }
+
+document.addEventListener('DOMContentLoaded', () => setLang(_lang))

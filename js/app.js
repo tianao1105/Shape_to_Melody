@@ -95,6 +95,10 @@ class App {
 
     document.getElementById('btn-convert').addEventListener('click', () => this._convert())
     document.getElementById('btn-play').addEventListener('click',   () => this._play())
+    document.getElementById('btn-export').addEventListener('click',  () => {
+      const { width } = this.canvas.getSize()
+      exportMidi(this._lastNotes, this.player.bpm, width)
+    })
     document.getElementById('btn-stop').addEventListener('click',   () => {
       this.player.stop()
       this._setStatus('')
@@ -237,7 +241,8 @@ class App {
     }
 
     this._lastNotes = notes
-    document.getElementById('btn-play').disabled = false
+    document.getElementById('btn-play').disabled   = false
+    document.getElementById('btn-export').disabled = false
 
     if (this._currentView === 'pianoroll') {
       this._setupPianoRoll()

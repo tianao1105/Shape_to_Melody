@@ -155,7 +155,7 @@ header p {
 }
 
 .view-btn {
-  background: var(--surface);
+  background: var(--surface2);
   border: 1px solid var(--border);
   border-left: none;
   color: var(--text-muted);
@@ -172,14 +172,14 @@ header p {
 
 .view-btn:hover {
   color: var(--text);
-  background: var(--surface2);
-  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .view-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--surface);
+  border-color: var(--border);
+  border-left: none;
+  color: var(--accent);
   font-weight: 600;
 }
 
