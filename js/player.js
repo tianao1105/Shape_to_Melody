@@ -61,25 +61,23 @@ const INSTRUMENTS = {
   }
 }
 
+function _linearToDb(v) {
+  if (v <= 0) return -Infinity
+  return 20 * Math.log10(Math.max(v, 0.001))
+}
+
 class Player {
   constructor() {
-    this.synth       = null
-    this.reverb      = null
-    this.isPlaying   = false
-    this.bpm         = 120
-    this._ready      = false
-    this._instrument = 'piano'
-    this._trigger    = null
-    this.onStop      = null
-    this._totalTime  = 0
+    this.reverb     = null
+    this._synths    = []   // [{synth, vol}] created per play call
+    this.isPlaying  = false
+    this.bpm        = 120
+    this._ready     = false
+    this._totalTime = 0
+    this.onStop     = null
   }
 
   warmup() { this._init().catch(() => {}) }
-
-  async setInstrument(name) {
-    this._instrument = name
-    if (this._ready) await this._createSynth()
-  }
 
   async _init() {
     if (this._ready) return
@@ -87,40 +85,40 @@ class Player {
     this.reverb = new Tone.Reverb({ decay: 2.5, wet: 0.25 })
     await this.reverb.ready
     this.reverb.toDestination()
-    await this._createSynth()
     this._ready = true
   }
 
-  async _createSynth() {
-    if (this.synth) { this.synth.disconnect(); this.synth.dispose() }
-    const cfg = INSTRUMENTS[this._instrument] || INSTRUMENTS.piano
-    this.synth = cfg.factory()
-    this.synth.connect(this.reverb)
-    this.reverb.wet.value = cfg.reverbWet
-    this._trigger = cfg.isPluck
-      ? (note, dur, time) => this.synth.triggerAttackRelease(note, time)
-      : (note, dur, time) => this.synth.triggerAttackRelease(note, dur, time)
-  }
-
-  // noteEvents: [{note, x, y}, ...] — x positions used for timing
-  // canvasWidth: original canvas width for normalizing x → time
-  async play(noteEvents, canvasWidth) {
+  // layers: array of layer objects with {notes[], instrument, volume}
+  async play(layers, canvasWidth) {
     await this._init()
     this.stop()
-    if (noteEvents.length === 0) return
+
+    const active = layers.filter(l => l.notes.length > 0)
+    if (!active.length) return
 
     Tone.getTransport().bpm.value = this.bpm
     const dur     = '8n'
     const stepSec = Tone.Time(dur).toSeconds()
-    this._totalTime = noteEvents.length * stepSec
+    this._totalTime = active.flatMap(l => l.notes).length * stepSec
 
-    // Schedule each note at a time proportional to its canvas X position
-    noteEvents.forEach(evt => {
-      const t = (evt.x / canvasWidth) * this._totalTime
-      Tone.getTransport().schedule((at) => {
-        this._trigger(evt.note, dur, at)
-      }, t)
-    })
+    for (const layer of active) {
+      const cfg   = INSTRUMENTS[layer.instrument] || INSTRUMENTS.piano
+      const synth = cfg.factory()
+      const vol   = new Tone.Volume(_linearToDb(layer.volume ?? 0.8))
+      synth.connect(vol)
+      vol.connect(this.reverb)
+      this.reverb.wet.value = cfg.reverbWet
+      this._synths.push({ synth, vol })
+
+      const trigger = cfg.isPluck
+        ? (note, _d, time) => synth.triggerAttackRelease(note, time)
+        : (note, d,  time) => synth.triggerAttackRelease(note, d, time)
+
+      layer.notes.forEach(evt => {
+        const t = (evt.x / canvasWidth) * this._totalTime
+        Tone.getTransport().schedule(at => trigger(evt.note, dur, at), t)
+      })
+    }
 
     Tone.getTransport().start()
     this.isPlaying = true
@@ -141,7 +139,12 @@ class Player {
   _cleanup() {
     Tone.getTransport().stop()
     Tone.getTransport().cancel()
-    if (this.synth) this.synth.releaseAll?.()
+    this._synths.forEach(({ synth, vol }) => {
+      synth.releaseAll?.()
+      synth.disconnect(); synth.dispose()
+      vol.disconnect();   vol.dispose()
+    })
+    this._synths = []
     this.isPlaying = false
   }
 

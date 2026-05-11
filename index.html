@@ -91,12 +91,27 @@
 
       <!-- Canvas area -->
       <div id="canvas-area">
-        <div id="canvas-container">
-          <canvas id="main-canvas"></canvas>
-          <canvas id="piano-roll-canvas" class="hidden"></canvas>
-          <div id="partial-overlay" class="hidden">
-            <div id="partial-band">
-              <span class="band-label" data-i18n="band-label">↕ 拖动调整范围</span>
+        <div id="canvas-wrap">
+          <div id="layer-bar">
+            <div id="layer-tabs">
+              <button id="btn-add-layer" title="Add layer">+</button>
+            </div>
+            <div id="layer-props">
+              <select id="layer-inst-select"></select>
+              <span class="lp-sep"></span>
+              <label class="lp-label" for="layer-vol">Vol</label>
+              <input type="range" id="layer-vol" min="0" max="100" value="80">
+              <span id="layer-vol-val">80</span>
+            </div>
+          </div>
+          <div id="canvas-container">
+            <canvas id="main-canvas"></canvas>
+            <canvas id="piano-roll-canvas" class="hidden"></canvas>
+            <canvas id="workspace-canvas"  class="hidden"></canvas>
+            <div id="partial-overlay" class="hidden">
+              <div id="partial-band">
+                <span class="band-label" data-i18n="band-label">↕ 拖动调整范围</span>
+              </div>
             </div>
           </div>
         </div>
@@ -104,6 +119,7 @@
         <div id="view-toggle">
           <button class="view-btn active" data-view="drawing"   data-i18n="tab-drawing">画布</button>
           <button class="view-btn"        data-view="pianoroll" data-i18n="tab-pianoroll">琴谱</button>
+          <button class="view-btn"        data-view="workspace" data-i18n="tab-workspace">工作区</button>
         </div>
       </div>
 
@@ -121,20 +137,6 @@
         <div class="panel">
           <h3><span data-i18n="sampling-interval">采样间隔</span> &nbsp;<span id="sampling-val">5</span>px</h3>
           <input type="range" id="sampling-interval" min="1" max="100" value="5">
-        </div>
-
-        <div class="panel">
-          <h3 data-i18n="instrument">乐器</h3>
-          <select id="instrument-select">
-            <option value="piano"     data-i18n="inst-piano">钢琴</option>
-            <option value="epiano"    data-i18n="inst-epiano">电钢琴</option>
-            <option value="organ"     data-i18n="inst-organ">风琴</option>
-            <option value="strings"   data-i18n="inst-strings">弦乐</option>
-            <option value="pluck"     data-i18n="inst-pluck">拨弦</option>
-            <option value="bell"      data-i18n="inst-bell">钟声</option>
-            <option value="marimba"   data-i18n="inst-marimba">马林巴</option>
-            <option value="xylophone" data-i18n="inst-xylophone">木琴</option>
-          </select>
         </div>
 
         <div class="panel">
@@ -156,7 +158,14 @@
           <button id="btn-convert" class="btn-primary full-width"           data-i18n="btn-convert">⟳ 转换</button>
           <button id="btn-play"    class="btn-primary full-width" disabled  data-i18n="btn-play">▶ 播放</button>
           <button id="btn-stop"    class="btn-secondary full-width"         data-i18n="btn-stop">■ 停止</button>
-          <button id="btn-export"  class="btn-secondary full-width" disabled data-i18n="btn-export">↓ 导出 MIDI</button>
+          <div class="export-row">
+            <select id="export-format">
+              <option value="midi">MIDI</option>
+              <option value="wav">WAV</option>
+              <option value="mp3">MP3</option>
+            </select>
+            <button id="btn-export" class="btn-secondary" disabled data-i18n="btn-export">↓ Export</button>
+          </div>
         </div>
 
         <div id="status-bar"></div>
@@ -165,13 +174,16 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/canvas.js"></script>
   <script src="js/converter.js"></script>
   <script src="js/player.js"></script>
   <script src="js/pianoroll.js"></script>
-  <script src="js/midi-export.js"></script>
+  <script src="js/layers.js"></script>
+  <script src="js/workspace.js"></script>
+  <script src="js/export.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
