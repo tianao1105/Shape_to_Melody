@@ -21,6 +21,14 @@ class App {
     prCanvas.height = height
     this.pianoRoll.init(prCanvas)
 
+    // Keep piano roll canvas in sync when canvas resizes (empty canvas + window grow)
+    this.canvas.onResize = () => {
+      const { width: w, height: h } = this.canvas.getSize()
+      prCanvas.width  = w
+      prCanvas.height = h
+      this.pianoRoll.init(prCanvas)
+    }
+
     this.player.warmup()
 
     this.player.onStop = () => {
@@ -36,7 +44,7 @@ class App {
   /* ── UI bindings ─────────────────────────────────────────── */
 
   _bindUI() {
-    this._bindModeGroup('tool-btns',         mode => this.canvas.setDrawTool(mode), 'tool-btn')
+    this._bindToolGroups(['tool-btns', 'shape-btns'], mode => this.canvas.setDrawTool(mode))
     this._bindModeGroup('canvas-mode-btns',  mode => this.canvas.setMode(mode))
     this._bindModeGroup('convert-mode-btns', mode => {
       this.convertMode = mode
@@ -103,6 +111,20 @@ class App {
     })
   }
 
+  // Binds multiple tool-btn groups as one mutually exclusive set
+  _bindToolGroups(groupIds, onChange) {
+    const allBtns = groupIds.flatMap(id =>
+      [...document.querySelectorAll(`#${id} .tool-btn`)]
+    )
+    allBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        allBtns.forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        onChange(btn.dataset.mode)
+      })
+    })
+  }
+
   /* ── View toggle ─────────────────────────────────────────── */
 
   _bindViewToggle() {
@@ -113,10 +135,6 @@ class App {
         this._switchView(btn.dataset.view)
       })
     })
-  }
-
-  _showViewToggle() {
-    document.getElementById('view-toggle').classList.remove('hidden')
   }
 
   _switchView(view) {
@@ -214,12 +232,11 @@ class App {
     const notes = this.converter.convert(strokes, height, this.convertMode, options)
 
     if (notes.length === 0) {
-      this._setStatus('画布是空的，请先绘画', 'error')
+      this._setStatus(t('status-empty'), 'error')
       return
     }
 
     this._lastNotes = notes
-    this._showViewToggle()
     document.getElementById('btn-play').disabled = false
 
     if (this._currentView === 'pianoroll') {
@@ -227,7 +244,7 @@ class App {
       this.pianoRoll.drawStatic()
     }
 
-    this._setStatus(`已转换 ${notes.length} 个音符，点击播放`, '')
+    this._setStatus(t('status-converted', { n: notes.length }), '')
   }
 
   /* ── Play ───────────────────────────────────────────────── */
@@ -235,7 +252,7 @@ class App {
   async _play() {
     if (this._lastNotes.length === 0) return
 
-    this._setStatus(`播放中… ${this._lastNotes.length} 个音符`, 'playing')
+    this._setStatus(t('status-playing', { n: this._lastNotes.length }), 'playing')
 
     const { width } = this.canvas.getSize()
     await this.player.play(this._lastNotes, width)

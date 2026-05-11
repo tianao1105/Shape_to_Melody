@@ -2,21 +2,25 @@ class CanvasManager {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId)
     this.ctx    = this.canvas.getContext('2d')
-    this.mode      = 'normal'    // symmetry mode
-    this.drawTool  = 'freehand'  // drawing tool
+    this.mode      = 'normal'
+    this.drawTool  = 'freehand'
     this.brushSize  = 6
     this.brushColor = '#ffffff'
     this.isDrawing  = false
     this.lastX = 0
     this.lastY = 0
 
-    this.strokes        = []   // completed strokes (raw points, un-mirrored)
+    this.strokes        = []
     this._currentStroke = []
     this._shapeStart    = null
-    this._snapshot      = null // canvas state before shape preview
+    this._snapshot      = null
+    this._rainbowHue    = 0
+
+    this.onResize = null
 
     this._initSize()
     this._bindEvents()
+    this._bindResize()
   }
 
   _initSize() {
@@ -25,8 +29,17 @@ class CanvasManager {
     const maxH = area.clientHeight - 32
     let w = maxW, h = Math.round(w * 5 / 9)
     if (h > maxH) { h = maxH; w = Math.round(h * 9 / 5) }
-    this.canvas.width = w
-    this.canvas.height = h
+    this.canvas.width  = Math.max(w, 1)
+    this.canvas.height = Math.max(h, 1)
+  }
+
+  _bindResize() {
+    new ResizeObserver(() => {
+      if (this.strokes.length === 0 && !this.isDrawing) {
+        this._initSize()
+        if (this.onResize) this.onResize()
+      }
+    }).observe(document.getElementById('canvas-area'))
   }
 
   _bindEvents() {
@@ -47,6 +60,10 @@ class CanvasManager {
     }
   }
 
+  _isFreehand() {
+    return ['freehand', 'neon', 'spray', 'calligraphy', 'rainbow'].includes(this.drawTool)
+  }
+
   /* ── Event handlers ──────────────────────────────────────── */
 
   _onStart(e) {
@@ -55,7 +72,7 @@ class CanvasManager {
     this.lastX = p.x
     this.lastY = p.y
 
-    if (this.drawTool === 'freehand') {
+    if (this._isFreehand()) {
       this._currentStroke = [{ x: p.x, y: p.y }]
       this._strokeSegment(p.x, p.y, p.x, p.y)
     } else {
@@ -68,11 +85,10 @@ class CanvasManager {
     if (!this.isDrawing) return
     const p = this._pos(e)
 
-    if (this.drawTool === 'freehand') {
+    if (this._isFreehand()) {
       this._strokeSegment(this.lastX, this.lastY, p.x, p.y)
       this._currentStroke.push({ x: p.x, y: p.y })
     } else {
-      // Live preview: restore snapshot then redraw shape
       this.ctx.putImageData(this._snapshot, 0, 0)
       this._renderShape(this._shapeStart, p)
     }
@@ -84,7 +100,7 @@ class CanvasManager {
   _onEnd() {
     if (!this.isDrawing) return
 
-    if (this.drawTool === 'freehand') {
+    if (this._isFreehand()) {
       if (this._currentStroke.length > 0) {
         const W = this.canvas.width, H = this.canvas.height
         const s = this._currentStroke
@@ -105,7 +121,6 @@ class CanvasManager {
       const dy = Math.abs(end.y - this._shapeStart.y)
 
       if (dx > 5 || dy > 5) {
-        // Commit final render and record stroke points for converter
         this.ctx.putImageData(this._snapshot, 0, 0)
         const allPts = this._renderShape(this._shapeStart, end)
         allPts.forEach(s => this.strokes.push(s))
@@ -130,20 +145,107 @@ class CanvasManager {
       pairs.push([  x1, H-y1,   x2, H-y2])
       pairs.push([W-x1, H-y1, W-x2, H-y2])
     }
+
+    switch (this.drawTool) {
+      case 'neon':        return this._strokeNeon(pairs)
+      case 'spray':       return this._strokeSpray(pairs)
+      case 'calligraphy': return this._strokeCalligraphy(pairs)
+      case 'rainbow':     return this._strokeRainbow(pairs)
+      default:
+        this.ctx.save()
+        this.ctx.strokeStyle = this.brushColor
+        this.ctx.lineWidth   = this.brushSize
+        this.ctx.lineCap     = 'round'
+        this.ctx.lineJoin    = 'round'
+        for (const [ax1,ay1,ax2,ay2] of pairs) {
+          this.ctx.beginPath(); this.ctx.moveTo(ax1,ay1); this.ctx.lineTo(ax2,ay2); this.ctx.stroke()
+        }
+        this.ctx.restore()
+    }
+  }
+
+  _strokeNeon(pairs) {
+    this.ctx.save()
+    this.ctx.lineCap     = 'round'
+    this.ctx.lineJoin    = 'round'
+    this.ctx.strokeStyle = this.brushColor
+    this.ctx.shadowColor = this.brushColor
+    // outer bloom
+    this.ctx.lineWidth   = this.brushSize * 4
+    this.ctx.globalAlpha = 0.07
+    this.ctx.shadowBlur  = this.brushSize * 10
+    for (const [x1,y1,x2,y2] of pairs) {
+      this.ctx.beginPath(); this.ctx.moveTo(x1,y1); this.ctx.lineTo(x2,y2); this.ctx.stroke()
+    }
+    // inner glow
+    this.ctx.lineWidth   = this.brushSize * 1.5
+    this.ctx.globalAlpha = 0.35
+    this.ctx.shadowBlur  = this.brushSize * 4
+    for (const [x1,y1,x2,y2] of pairs) {
+      this.ctx.beginPath(); this.ctx.moveTo(x1,y1); this.ctx.lineTo(x2,y2); this.ctx.stroke()
+    }
+    // bright core
+    this.ctx.lineWidth   = this.brushSize * 0.5
+    this.ctx.globalAlpha = 1
+    this.ctx.shadowBlur  = this.brushSize * 2
+    for (const [x1,y1,x2,y2] of pairs) {
+      this.ctx.beginPath(); this.ctx.moveTo(x1,y1); this.ctx.lineTo(x2,y2); this.ctx.stroke()
+    }
+    this.ctx.restore()
+  }
+
+  _strokeSpray(pairs) {
+    const r       = this.brushSize * 2.5
+    const density = 22
+    this.ctx.save()
+    this.ctx.fillStyle = this.brushColor
+    for (const [,,ax2,ay2] of pairs) {
+      for (let i = 0; i < density; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const dist  = Math.sqrt(Math.random()) * r
+        this.ctx.globalAlpha = Math.random() * 0.55 + 0.3
+        this.ctx.beginPath()
+        this.ctx.arc(
+          ax2 + Math.cos(angle) * dist,
+          ay2 + Math.sin(angle) * dist,
+          Math.random() * 1.2 + 0.4, 0, Math.PI * 2
+        )
+        this.ctx.fill()
+      }
+    }
+    this.ctx.restore()
+  }
+
+  _strokeCalligraphy(pairs) {
+    const nibAngle = Math.PI / 4   // 45° nib
     this.ctx.save()
     this.ctx.strokeStyle = this.brushColor
+    this.ctx.lineCap     = 'round'
+    this.ctx.lineJoin    = 'round'
+    for (const [x1,y1,x2,y2] of pairs) {
+      const angle  = Math.atan2(y2 - y1, x2 - x1)
+      const factor = Math.abs(Math.sin(angle - nibAngle))
+      this.ctx.lineWidth = Math.max(this.brushSize * 0.3 + factor * this.brushSize * 2.5, 0.5)
+      this.ctx.beginPath(); this.ctx.moveTo(x1,y1); this.ctx.lineTo(x2,y2); this.ctx.stroke()
+    }
+    this.ctx.restore()
+  }
+
+  _strokeRainbow(pairs) {
+    this._rainbowHue = (this._rainbowHue + 4) % 360
+    this.ctx.save()
+    this.ctx.strokeStyle = `hsl(${this._rainbowHue}, 100%, 55%)`
     this.ctx.lineWidth   = this.brushSize
     this.ctx.lineCap     = 'round'
     this.ctx.lineJoin    = 'round'
-    for (const [ax1,ay1,ax2,ay2] of pairs) {
-      this.ctx.beginPath(); this.ctx.moveTo(ax1,ay1); this.ctx.lineTo(ax2,ay2); this.ctx.stroke()
+    for (const [x1,y1,x2,y2] of pairs) {
+      this.ctx.beginPath(); this.ctx.moveTo(x1,y1); this.ctx.lineTo(x2,y2); this.ctx.stroke()
     }
     this.ctx.restore()
   }
 
   /* ── Shape tools ─────────────────────────────────────────── */
 
-  // Renders the shape and returns all strokes (original + mirrored)
   _renderShape(start, end) {
     const pts = this._shapePoints(start, end)
     if (pts.length === 0) return []
@@ -226,7 +328,6 @@ class CanvasManager {
       const t = (i / n) * Math.PI * 2
       const x = 16 * Math.pow(Math.sin(t), 3)
       const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t)
-      // shift y center to ~0, flip for canvas y-axis
       return { x: cx + x * s, y: cy - (y + 2.75) * s }
     })
   }
@@ -280,6 +381,7 @@ class CanvasManager {
     this._currentStroke = []
     this._shapeStart = null
     this._snapshot   = null
+    this._rainbowHue = 0
   }
 
   getStrokes() { return this.strokes }

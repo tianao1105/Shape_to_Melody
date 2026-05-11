@@ -63,6 +63,21 @@ class PianoRoll {
 
   /* ── private ──────────────────────────────────────────────── */
 
+  _tc() {
+    const s = getComputedStyle(document.documentElement)
+    const g = p => s.getPropertyValue(p).trim()
+    return {
+      bg:        g('--bg'),
+      surface:   g('--surface'),
+      surface2:  g('--surface2'),
+      border:    g('--border'),
+      accent:    g('--accent'),
+      accentH:   g('--accent-h'),
+      text:      g('--text'),
+      textMuted: g('--text-muted'),
+    }
+  }
+
   _tick() {
     if (!this._running) return
     this._drawFrame(Tone.getTransport().seconds, true)
@@ -70,42 +85,40 @@ class PianoRoll {
   }
 
   _drawFrame(t, playing) {
-    const ctx  = this.ctx
-    const W    = this.canvas.width
-    const H    = this.canvas.height
-    const pw   = this.pianoW
+    const ctx   = this.ctx
+    const W     = this.canvas.width
+    const H     = this.canvas.height
+    const pw    = this.pianoW
     const rollW = W - pw
+    const c     = this._tc()
 
-    // scrollX: how far the pattern has shifted left
-    // at t = totalTime the rightmost note (canvasX = canvasW) reaches pw
     const scrollX = playing ? (t / this.totalTime) * rollW : 0
 
     this._active.clear()
 
     // background
-    ctx.fillStyle = '#07070e'
+    ctx.fillStyle = c.bg
     ctx.fillRect(0, 0, W, H)
 
     // row backgrounds
     this.allNotes.forEach((note, idx) => {
       const y = idx * this.rowH
-      ctx.fillStyle = note.includes('#') ? '#09090f' : '#0d0d1a'
+      ctx.fillStyle = note.includes('#') ? c.bg : c.surface
       ctx.fillRect(pw, y, rollW, this.rowH)
       if (!note.includes('#') && note[0] === 'C') {
-        ctx.strokeStyle = '#1c1c32'
-        ctx.lineWidth = 1
+        ctx.strokeStyle = c.border
+        ctx.lineWidth   = 1
         ctx.beginPath(); ctx.moveTo(pw, y); ctx.lineTo(W, y); ctx.stroke()
       }
     })
 
-    // note dots — positioned by original canvas coordinates
+    // note dots
     const dotR = Math.max(2, Math.min(this.rowH / 2 - 1, 5))
 
     this.noteEvents.forEach(evt => {
       const noteIdx = this.allNotes.indexOf(evt.note)
       if (noteIdx === -1) return
 
-      // Map canvas X → roll X, then apply scroll
       const baseX   = pw + (evt.x / this.canvasW) * rollW
       const nx      = baseX - scrollX
       if (nx < pw - dotR * 2 || nx > W + dotR) return
@@ -114,14 +127,14 @@ class PianoRoll {
       const atPiano = nx <= pw + dotR && nx >= pw - dotR * 3
       if (atPiano) this._active.add(evt.note)
 
-      ctx.fillStyle = atPiano ? '#c4b8ff' : '#5c52b8'
+      ctx.fillStyle = atPiano ? c.accentH : c.accent
       ctx.beginPath()
       ctx.arc(nx, ny, dotR, 0, Math.PI * 2)
       ctx.fill()
     })
 
     // piano keys (drawn on top)
-    this._drawKeys()
+    this._drawKeys(c)
 
     // playhead
     ctx.strokeStyle = 'rgba(255,255,255,0.12)'
@@ -129,7 +142,7 @@ class PianoRoll {
     ctx.beginPath(); ctx.moveTo(pw, 0); ctx.lineTo(pw, H); ctx.stroke()
   }
 
-  _drawKeys() {
+  _drawKeys(c) {
     const ctx = this.ctx
     const pw  = this.pianoW
     const rh  = this.rowH
@@ -140,23 +153,23 @@ class PianoRoll {
       const active = this._active.has(note)
 
       if (isBlk) {
-        ctx.fillStyle = active ? '#8878e8' : '#111124'
+        ctx.fillStyle = c.bg
         ctx.fillRect(0, y, pw - 8, rh)
-        ctx.fillStyle = active ? '#c4b8ff' : '#1c1c38'
+        ctx.fillStyle = active ? c.accentH : c.surface
         ctx.fillRect(pw - 24, y + 1, 15, rh - 2)
       } else {
-        ctx.fillStyle = active ? '#a090ff' : '#181830'
+        ctx.fillStyle = active ? c.accent : c.surface2
         ctx.fillRect(0, y, pw - 1, rh)
       }
 
-      ctx.strokeStyle = '#0b0b1e'
+      ctx.strokeStyle = c.bg
       ctx.lineWidth   = 0.5
       ctx.strokeRect(0, y, pw - 1, rh)
 
       if (rh >= 9) {
         const isC = !isBlk && note[0] === 'C'
         if (isC || rh >= 13) {
-          ctx.fillStyle    = active ? '#fff' : (isBlk ? '#44446a' : '#55557a')
+          ctx.fillStyle    = active ? c.text : c.textMuted
           ctx.font         = `${Math.min(11, Math.floor(rh * 0.62))}px monospace`
           ctx.textAlign    = 'right'
           ctx.textBaseline = 'middle'

@@ -10,123 +10,152 @@
   <div id="app">
     <header>
       <h1>Shape to Melody</h1>
-      <p>画出形状，听见旋律</p>
+      <p data-i18n="subtitle">画出形状，听见旋律</p>
+      <div id="theme-picker">
+        <button class="theme-dot active" data-theme="mint"   style="background:#F08766" title="薄荷珊瑚"></button>
+        <button class="theme-dot"        data-theme="pop"    style="background:#EE34D8" title="荧光玫红"></button>
+        <button class="theme-dot"        data-theme="forest" style="background:#F49A2C" title="森林橙绿"></button>
+        <button class="theme-dot"        data-theme="peach"  style="background:#F58F7D" title="桃色渐变"></button>
+        <button class="theme-dot"        data-theme="sage"   style="background:#D49497" title="鼠尾草脏粉"></button>
+        <button class="theme-dot"        data-theme="earth"  style="background:#D89A5B" title="大地咖啡"></button>
+        <button class="theme-dot"        data-theme="candy"  style="background:#F4B6D1" title="棉花糖"></button>
+        <button class="theme-dot"        data-theme="rose"   style="background:#E83D85" title="玫红浪漫"></button>
+      </div>
+      <button id="lang-toggle" onclick="toggleLang()">EN</button>
     </header>
 
     <div id="main">
       <!-- Left sidebar: drawing controls -->
       <div id="sidebar-left">
         <div class="panel">
-          <h3>绘画工具</h3>
+          <h3 data-i18n="brush-tools">笔触</h3>
           <div class="tool-grid" id="tool-btns">
-            <button class="tool-btn active" data-mode="freehand">画笔</button>
-            <button class="tool-btn" data-mode="line">直线</button>
-            <button class="tool-btn" data-mode="rect">矩形</button>
-            <button class="tool-btn" data-mode="circle">圆形</button>
-            <button class="tool-btn" data-mode="heart">心形</button>
-            <button class="tool-btn" data-mode="triangle">三角</button>
-            <button class="tool-btn" data-mode="star">星形</button>
+            <button class="tool-btn active" data-mode="freehand"    data-i18n="tool-freehand">画笔</button>
+            <button class="tool-btn"        data-mode="neon"        data-i18n="tool-neon">霓虹</button>
+            <button class="tool-btn"        data-mode="spray"       data-i18n="tool-spray">喷雾</button>
+            <button class="tool-btn"        data-mode="calligraphy" data-i18n="tool-calligraphy">书法</button>
+            <button class="tool-btn"        data-mode="rainbow"     data-i18n="tool-rainbow">彩虹</button>
           </div>
         </div>
 
         <div class="panel">
-          <h3>画布模式</h3>
+          <h3 data-i18n="shape-tools">形状</h3>
+          <div class="tool-grid" id="shape-btns">
+            <button class="tool-btn" data-mode="line"     data-i18n="tool-line">直线</button>
+            <button class="tool-btn" data-mode="rect"     data-i18n="tool-rect">矩形</button>
+            <button class="tool-btn" data-mode="circle"   data-i18n="tool-circle">圆形</button>
+            <button class="tool-btn" data-mode="heart"    data-i18n="tool-heart">心形</button>
+            <button class="tool-btn" data-mode="triangle" data-i18n="tool-triangle">三角</button>
+            <button class="tool-btn" data-mode="star"     data-i18n="tool-star">星形</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3 data-i18n="canvas-mode">画布模式</h3>
           <div class="btn-group-v" id="canvas-mode-btns">
-            <button class="mode-btn active" data-mode="normal">普通</button>
-            <button class="mode-btn" data-mode="symmetric">左右对称</button>
-            <button class="mode-btn" data-mode="kaleidoscope">万花筒</button>
+            <button class="mode-btn active" data-mode="normal"        data-i18n="mode-normal">普通</button>
+            <button class="mode-btn"        data-mode="symmetric"     data-i18n="mode-symmetric">左右对称</button>
+            <button class="mode-btn"        data-mode="kaleidoscope"  data-i18n="mode-kaleidoscope">万花筒</button>
           </div>
         </div>
 
         <div class="panel">
-          <h3>笔刷大小 &nbsp;<span id="brush-size-val">6</span></h3>
+          <h3><span data-i18n="brush-size">笔刷大小</span> &nbsp;<span id="brush-size-val">6</span></h3>
           <input type="range" id="brush-size" min="2" max="24" value="6">
         </div>
 
         <div class="panel">
-          <h3>颜色</h3>
+          <h3 data-i18n="color">颜色</h3>
           <div class="color-row">
             <div class="color-swatch active" data-color="#ffffff" style="background:#ffffff"></div>
-            <div class="color-swatch" data-color="#ff6b6b" style="background:#ff6b6b"></div>
-            <div class="color-swatch" data-color="#ffd93d" style="background:#ffd93d"></div>
-            <div class="color-swatch" data-color="#6bcb77" style="background:#6bcb77"></div>
-            <div class="color-swatch" data-color="#4d96ff" style="background:#4d96ff"></div>
-            <div class="color-swatch" data-color="#c77dff" style="background:#c77dff"></div>
+            <div class="color-swatch" data-color="#c0c0c0" style="background:#c0c0c0"></div>
+            <div class="color-swatch" data-color="#808080" style="background:#808080"></div>
+            <div class="color-swatch" data-color="#000000" style="background:#000000"></div>
+            <div class="color-swatch" data-color="#ff0000" style="background:#ff0000"></div>
+            <div class="color-swatch" data-color="#800000" style="background:#800000"></div>
+            <div class="color-swatch" data-color="#ff8000" style="background:#ff8000"></div>
+            <div class="color-swatch" data-color="#ffff00" style="background:#ffff00"></div>
+            <div class="color-swatch" data-color="#808000" style="background:#808000"></div>
+            <div class="color-swatch" data-color="#00cc00" style="background:#00cc00"></div>
+            <div class="color-swatch" data-color="#008000" style="background:#008000"></div>
+            <div class="color-swatch" data-color="#00ffff" style="background:#00ffff"></div>
+            <div class="color-swatch" data-color="#008080" style="background:#008080"></div>
+            <div class="color-swatch" data-color="#0000ff" style="background:#0000ff"></div>
+            <div class="color-swatch" data-color="#ff00ff" style="background:#ff00ff"></div>
+            <div class="color-swatch" data-color="#800080" style="background:#800080"></div>
           </div>
         </div>
 
-        <button id="btn-clear" class="btn-secondary full-width">清除画布</button>
+        <button id="btn-clear" class="btn-secondary full-width" data-i18n="btn-clear">清除画布</button>
       </div>
 
       <!-- Canvas area -->
       <div id="canvas-area">
-        <!-- View toggle (hidden until first conversion) -->
-        <div id="view-toggle" class="hidden">
-          <button class="view-btn active" data-view="drawing">🎨 原画</button>
-          <button class="view-btn" data-view="pianoroll">🎹 钢琴卷帘</button>
-        </div>
-
         <div id="canvas-container">
           <canvas id="main-canvas"></canvas>
           <canvas id="piano-roll-canvas" class="hidden"></canvas>
-          <!-- Partial conversion overlay band -->
           <div id="partial-overlay" class="hidden">
             <div id="partial-band">
-              <span class="band-label">↕ 拖动调整范围</span>
+              <span class="band-label" data-i18n="band-label">↕ 拖动调整范围</span>
             </div>
           </div>
+        </div>
+        <!-- View toggle: vertical bookmark tabs on the right edge of canvas -->
+        <div id="view-toggle">
+          <button class="view-btn active" data-view="drawing"   data-i18n="tab-drawing">画布</button>
+          <button class="view-btn"        data-view="pianoroll" data-i18n="tab-pianoroll">琴谱</button>
         </div>
       </div>
 
       <!-- Right sidebar: playback controls -->
       <div id="sidebar-right">
         <div class="panel">
-          <h3>转换方式</h3>
+          <h3 data-i18n="convert-mode">转换方式</h3>
           <div class="btn-group-v" id="convert-mode-btns">
-            <button class="mode-btn active" data-mode="full">全部转换</button>
-            <button class="mode-btn" data-mode="partial">部分转换</button>
-            <button class="mode-btn" data-mode="random">随机转换</button>
+            <button class="mode-btn active" data-mode="full"     data-i18n="mode-full">全部转换</button>
+            <button class="mode-btn"        data-mode="partial"  data-i18n="mode-partial">部分转换</button>
+            <button class="mode-btn"        data-mode="random"   data-i18n="mode-random">随机转换</button>
           </div>
         </div>
 
         <div class="panel">
-          <h3>采样间隔 &nbsp;<span id="sampling-val">5</span>px</h3>
+          <h3><span data-i18n="sampling-interval">采样间隔</span> &nbsp;<span id="sampling-val">5</span>px</h3>
           <input type="range" id="sampling-interval" min="1" max="100" value="5">
         </div>
 
         <div class="panel">
-          <h3>乐器</h3>
+          <h3 data-i18n="instrument">乐器</h3>
           <select id="instrument-select">
-            <option value="piano">钢琴</option>
-            <option value="epiano">电钢琴</option>
-            <option value="organ">风琴</option>
-            <option value="strings">弦乐</option>
-            <option value="pluck">拨弦</option>
-            <option value="bell">钟声</option>
-            <option value="marimba">马林巴</option>
-            <option value="xylophone">木琴</option>
+            <option value="piano"     data-i18n="inst-piano">钢琴</option>
+            <option value="epiano"    data-i18n="inst-epiano">电钢琴</option>
+            <option value="organ"     data-i18n="inst-organ">风琴</option>
+            <option value="strings"   data-i18n="inst-strings">弦乐</option>
+            <option value="pluck"     data-i18n="inst-pluck">拨弦</option>
+            <option value="bell"      data-i18n="inst-bell">钟声</option>
+            <option value="marimba"   data-i18n="inst-marimba">马林巴</option>
+            <option value="xylophone" data-i18n="inst-xylophone">木琴</option>
           </select>
         </div>
 
         <div class="panel">
-          <h3>音阶</h3>
+          <h3 data-i18n="scale">音阶</h3>
           <select id="scale-select">
-            <option value="pentatonic">五声音阶</option>
-            <option value="major">大调</option>
-            <option value="minor">小调</option>
-            <option value="chromatic">半音阶</option>
+            <option value="pentatonic" data-i18n="scale-pentatonic">五声音阶</option>
+            <option value="major"      data-i18n="scale-major">大调</option>
+            <option value="minor"      data-i18n="scale-minor">小调</option>
+            <option value="chromatic"  data-i18n="scale-chromatic">半音阶</option>
           </select>
         </div>
 
         <div class="panel">
-          <h3>速度 &nbsp;<span id="bpm-val">120</span> BPM</h3>
+          <h3><span data-i18n="tempo">速度</span> &nbsp;<span id="bpm-val">120</span> BPM</h3>
           <input type="range" id="bpm" min="40" max="240" value="120">
         </div>
 
         <div id="play-controls">
-          <button id="btn-convert" class="btn-primary full-width">⟳ 转换</button>
-          <button id="btn-play" class="btn-primary full-width" disabled>▶ 播放</button>
-          <button id="btn-stop" class="btn-secondary full-width">■ 停止</button>
+          <button id="btn-convert" class="btn-primary full-width"           data-i18n="btn-convert">⟳ 转换</button>
+          <button id="btn-play"    class="btn-primary full-width" disabled  data-i18n="btn-play">▶ 播放</button>
+          <button id="btn-stop"    class="btn-secondary full-width"         data-i18n="btn-stop">■ 停止</button>
         </div>
 
         <div id="status-bar"></div>
@@ -135,6 +164,8 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/canvas.js"></script>
   <script src="js/converter.js"></script>
   <script src="js/player.js"></script>

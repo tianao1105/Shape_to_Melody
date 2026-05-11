@@ -53,6 +53,44 @@ header p {
   color: var(--text-muted);
 }
 
+#theme-picker {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.theme-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+
+.theme-dot:hover  { transform: scale(1.25); border-color: var(--text-muted); }
+.theme-dot.active { border-color: var(--text); transform: scale(1.15); }
+
+#lang-toggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+#lang-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
 /* Main layout */
 #main {
   display: flex;
@@ -97,37 +135,45 @@ header p {
 /* Canvas area */
 #canvas-area {
   flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   background: var(--bg);
   overflow: hidden;
   padding: 12px 0;
 }
 
-/* View toggle (原画 / 钢琴卷帘) */
+/* View toggle — vertical bookmark tabs on right edge of canvas */
 #view-toggle {
   display: flex;
-  gap: 6px;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 5px;
+  align-self: center;
+  margin-left: -1px;
+  z-index: 10;
 }
 
 .view-btn {
-  background: var(--surface2);
+  background: var(--surface);
   border: 1px solid var(--border);
+  border-left: none;
   color: var(--text-muted);
-  padding: 5px 14px;
-  border-radius: 20px;
+  padding: 24px 5px;
+  border-radius: 0 8px 8px 0;
   cursor: pointer;
-  font-size: 0.82rem;
-  transition: all 0.15s;
+  font-size: 0.70rem;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
 .view-btn:hover {
-  border-color: var(--accent);
   color: var(--text);
+  background: var(--surface2);
+  border-color: var(--accent);
 }
 
 .view-btn.active {
@@ -139,17 +185,20 @@ header p {
 
 #canvas-container {
   position: relative;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
   cursor: crosshair;
-  box-shadow: 0 0 40px rgba(124, 111, 224, 0.08);
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.10);
 }
 
 #main-canvas,
 #piano-roll-canvas {
   display: block;
-  background: #08080f;
+  max-width: 100%;
+  aspect-ratio: 9 / 5;
+  background: var(--surface);
 }
 
 /* Partial overlay */
@@ -366,4 +415,63 @@ select:focus {
 
 #status-bar.error {
   color: var(--danger);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 960px) {
+  #sidebar-left,
+  #sidebar-right {
+    width: 150px;
+    padding: 12px 10px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 720px) {
+  #sidebar-left,
+  #sidebar-right {
+    width: 120px;
+    padding: 10px 8px;
+    gap: 10px;
+  }
+
+  .mode-btn  { font-size: 0.76rem; padding: 5px 7px; }
+  .tool-btn  { font-size: 0.72rem; padding: 4px 2px; }
+  .panel h3  { font-size: 0.62rem; }
+  select     { font-size: 0.76rem; padding: 5px 6px; }
+
+  .btn-primary   { font-size: 0.82rem; padding: 8px 8px; }
+  .btn-secondary { font-size: 0.76rem; padding: 6px 8px; }
+
+  header h1  { font-size: 0.95rem; }
+  header p   { display: none; }
+}
+
+@media (max-width: 520px) {
+  body { overflow-y: auto; height: auto; }
+
+  #app  { height: auto; min-height: 100vh; }
+  #main { flex-direction: column; overflow: visible; }
+
+  #sidebar-left,
+  #sidebar-right {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: none;
+    overflow-y: visible;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  #sidebar-right { border-left: none; border-top: 1px solid var(--border); }
+
+  .panel        { min-width: 130px; flex: 1; }
+  #play-controls { margin-top: 0; flex-direction: row; flex-wrap: wrap; }
+  #play-controls button { flex: 1; min-width: 80px; }
+
+  #canvas-area { padding: 10px 8px; }
 }
