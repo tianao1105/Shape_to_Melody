@@ -109,7 +109,7 @@ const TRANSLATIONS = {
   }
 }
 
-let _lang = 'zh'
+let _lang = 'en'
 
 function t(key, vars = {}) {
   let str = (TRANSLATIONS[_lang] || TRANSLATIONS.zh)[key] || key
