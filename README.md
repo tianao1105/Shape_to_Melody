@@ -4,47 +4,47 @@ Draw something, hear melody.
 通过将用户画的形状转换为钢琴键来转换为旋律。
 ## A) Core Workflow (5/7 — 5/14)
 
-- [x] Main pipeline working: Draw → Convert → Play (from drawing to sound)
-- [ ] Drawing tools: brush / eraser / clear / undo (at least undo or clear)
-- [x] Canvas modes: Normal / Horizontal Symmetry / Kaleidoscope (four-quadrant mirror) switching
-- [x] Conversion: map lines/patterns into a readable piano key / note sequence (define minimum rules)
-- [x] Conversion modes:
-  - [x] Full conversion (with sampling interval parameter)
-  - [ ] Partial conversion (range slider for area selection: vertically draggable)
-  - [ ] Random conversion (optional: random seed or randomness intensity)
-- [x] Playback controls: play / pause / stop; speed (BPM or speed)
-- [x] Basic UI: clear mode entries (Draw / Convert / Play), status indicators, error messages
+- Main pipeline working: Draw → Convert → Play (from drawing to sound)
+- Drawing tools: brush / eraser / clear / undo (at least undo or clear)
+- Canvas modes: Normal / Horizontal Symmetry / Kaleidoscope (four-quadrant mirror) switching
+- Conversion: map lines/patterns into a readable piano key / note sequence (define minimum rules)
+- Conversion modes:
+  - Full conversion (with sampling interval parameter)
+  - Partial conversion (range slider for area selection: vertically draggable)
+  - Random conversion (optional: random seed or randomness intensity)
+- Playback controls: play / pause / stop; speed (BPM or speed)
+- Basic UI: clear mode entries (Draw / Convert / Play), status indicators, error messages
 
 ## B) Save / Share (5/14 — 5/28)
 
-- [ ] Design save data structure (must include: canvas content / conversion parameters / note sequence)
-- [ ] Save method (pick one):
-  - [ ] Local storage (LocalStorage / IndexedDB)
-  - [ ] File export (JSON)
-- [ ] Load / restore: reopen saved works and play them back
-- [ ] Share method (pick one):
-  - [ ] Import / export JSON sharing
-  - [ ] Generate copyable share string (compressed data)
-- [ ] Save / share UI (buttons, success notifications, error notifications)
+- Design save data structure (must include: canvas content / conversion parameters / note sequence)
+- Save method (pick one):
+  - Local storage (LocalStorage / IndexedDB)
+  - File export (JSON)
+- Load / restore: reopen saved works and play them back
+- Share method (pick one):
+  - Import / export JSON sharing
+  - Generate copyable share string (compressed data)
+- Save / share UI (buttons, success notifications, error notifications)
 
 ## C) Multiple Instrument Sounds (5/14 — 5/28)
 
-- [ ] Choose audio approach: WebAudio synthesis / Tone.js / Sampler
-- [ ] At least 3 instrument sounds (e.g., Piano / Synth / Bell)
-- [ ] Stable playback and consistent volume across instruments (avoid clipping / overly quiet output)
+- Choose audio approach: WebAudio synthesis / Tone.js / Sampler
+- At least 3 instrument sounds (e.g., Piano / Synth / Bell)
+- Stable playback and consistent volume across instruments (avoid clipping / overly quiet output)
 
 ## D) Visual Polish (5/28 — 6/8)
 
-- [ ] Playback visualization (highlight current key / current segment, beat indicator)
-- [ ] Conversion animations or transitions (make "shape → melody" more intuitive)
-- [ ] Unified color scheme and typography; improve empty states / onboarding
-- [ ] Performance optimization (no lag with long strokes or complex patterns)
+- Playback visualization (highlight current key / current segment, beat indicator)
+- Conversion animations or transitions (make "shape → melody" more intuitive)
+- Unified color scheme and typography; improve empty states / onboarding
+- Performance optimization (no lag with long strokes or complex patterns)
 
 ## E) Deliverables (6/4 — 6/8)
 
-- [ ] GitHub repo cleanup (README: project intro / usage / features / screenshots or GIFs)
-- [ ] Deployment and accessibility (per course requirements: GitHub Pages or other online demo link)
-- [ ] Submit to GitHub (deadline June 8): verify complete commit history, working code, accessible links
+- GitHub repo cleanup (README: project intro / usage / features / screenshots or GIFs)
+- Deployment and accessibility (per course requirements: GitHub Pages or other online demo link)
+- Submit to GitHub (deadline June 8): verify complete commit history, working code, accessible links
 
 ## 功能
 
