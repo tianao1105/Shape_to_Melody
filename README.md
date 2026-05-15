@@ -40,11 +40,6 @@ Draw something, hear melody.
 - Unified color scheme and typography; improve empty states / onboarding
 - Performance optimization (no lag with long strokes or complex patterns)
 
-## E) Deliverables (6/4 — 6/8)
-
-- GitHub repo cleanup (README: project intro / usage / features / screenshots or GIFs)
-- Deployment and accessibility (per course requirements: GitHub Pages or other online demo link)
-- Submit to GitHub (deadline June 8): verify complete commit history, working code, accessible links
 
 ## 功能
 
