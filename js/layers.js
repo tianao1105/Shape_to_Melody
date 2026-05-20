@@ -1,4 +1,5 @@
 const LAYER_COLORS = ['#7c6fe0','#e05878','#40b8e0','#50cc70','#e09030','#cc50d0']
+const HISTORY_LIMIT = 25
 
 class LayerManager {
   constructor() {
@@ -19,18 +20,72 @@ class LayerManager {
     const canvas = document.createElement('canvas')
     canvas.width  = this._w
     canvas.height = this._h
-    this.layers.push({
+    const ctx    = canvas.getContext('2d')
+    const layer  = {
       id,
       name:       `L${id + 1}`,
       color:      LAYER_COLORS[id % LAYER_COLORS.length],
       canvas,
-      ctx:        canvas.getContext('2d'),
+      ctx,
       strokes:    [],
       notes:      [],
       instrument: 'piano',
       volume:     0.8,
-    })
-    return this.layers[id]
+      history:    [],
+      histIdx:    -1,
+    }
+    this.layers.push(layer)
+    // Push the initial empty state as the baseline (histIdx = 0)
+    this._pushSnapshotTo(layer)
+    return layer
+  }
+
+  _captureSnapshot(layer) {
+    return {
+      imageData: layer.ctx.getImageData(0, 0, this._w, this._h),
+      strokes:   layer.strokes.map(s => s.slice()),
+    }
+  }
+
+  _restoreSnapshot(layer, snap) {
+    layer.ctx.putImageData(snap.imageData, 0, 0)
+    layer.strokes = snap.strokes.map(s => s.slice())
+  }
+
+  _pushSnapshotTo(layer) {
+    // Truncate any redo branch
+    layer.history.length = layer.histIdx + 1
+    layer.history.push(this._captureSnapshot(layer))
+    layer.histIdx++
+    // Enforce cap — drop oldest, shift index back
+    if (layer.history.length > HISTORY_LIMIT) {
+      layer.history.shift()
+      layer.histIdx--
+    }
+  }
+
+  pushHistory()         { if (this.active) this._pushSnapshotTo(this.active) }
+  canUndo()             { return !!this.active && this.active.histIdx > 0 }
+  canRedo()             { return !!this.active && this.active.histIdx < this.active.history.length - 1 }
+
+  undo() {
+    const l = this.active
+    if (!l || l.histIdx <= 0) return false
+    l.histIdx--
+    this._restoreSnapshot(l, l.history[l.histIdx])
+    return true
+  }
+
+  redo() {
+    const l = this.active
+    if (!l || l.histIdx >= l.history.length - 1) return false
+    l.histIdx++
+    this._restoreSnapshot(l, l.history[l.histIdx])
+    return true
+  }
+
+  isEmpty() {
+    return this.layers.every(l => l.strokes.length === 0)
   }
 
   add() {
@@ -59,6 +114,10 @@ class LayerManager {
       nctx.drawImage(l.canvas, 0, 0, w, h)
       l.canvas = nc
       l.ctx    = nctx
+      // Stored ImageData snapshots are at old dimensions → reset history baseline
+      l.history = []
+      l.histIdx = -1
+      this._pushSnapshotTo(l)
     })
   }
 

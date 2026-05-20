@@ -80,6 +80,7 @@ class CanvasManager {
 
   _onStart(e) {
     this.isDrawing = true
+    document.getElementById('canvas-container')?.classList.add('has-drawn')
     const p = this._pos(e)
     this.lastX = p.x; this.lastY = p.y
 
@@ -113,6 +114,8 @@ class CanvasManager {
   _onEnd() {
     if (!this.isDrawing) return
 
+    let committed = false
+
     if (this._isFreehand()) {
       if (this._currentStroke.length > 0) {
         const W = this.canvas.width, H = this.canvas.height
@@ -125,6 +128,7 @@ class CanvasManager {
           target.push(s.map(p => ({ x:     p.x, y: H - p.y })))
           target.push(s.map(p => ({ x: W - p.x, y: H - p.y })))
         }
+        committed = true
       }
       this._currentStroke = []
       if (this.lm) this.lm.composite(this.ctx)
@@ -146,12 +150,49 @@ class CanvasManager {
           const allPts = this._renderShape(this._shapeStart, end, this.ctx)
           allPts.forEach(s => this.strokes.push(s))
         }
+        committed = true
       } else {
         this.ctx.putImageData(this._snapshot, 0, 0)
       }
       this._shapeStart = null; this._snapshot = null; this._layerSnap = null
     }
     this.isDrawing = false
+
+    if (committed && this.lm) {
+      this.lm.pushHistory()
+      this._notifyHistoryChange()
+    }
+  }
+
+  /* ── Undo / Redo ──────────────────────────────────────────── */
+
+  setOnHistoryChange(fn) { this._onHistoryChange = fn }
+  _notifyHistoryChange() { if (this._onHistoryChange) this._onHistoryChange() }
+
+  canUndo() { return !!this.lm && this.lm.canUndo() }
+  canRedo() { return !!this.lm && this.lm.canRedo() }
+
+  undo() {
+    if (!this.lm || !this.lm.undo()) return false
+    this.lm.composite(this.ctx)
+    this._refreshEmptyHint()
+    this._notifyHistoryChange()
+    return true
+  }
+
+  redo() {
+    if (!this.lm || !this.lm.redo()) return false
+    this.lm.composite(this.ctx)
+    this._refreshEmptyHint()
+    this._notifyHistoryChange()
+    return true
+  }
+
+  _refreshEmptyHint() {
+    const container = document.getElementById('canvas-container')
+    if (!container) return
+    const empty = this.lm ? this.lm.isEmpty() : this.strokes.length === 0
+    container.classList.toggle('has-drawn', !empty)
   }
 
   /* ── Freehand stroke ─────────────────────────────────────── */
@@ -348,12 +389,15 @@ class CanvasManager {
     if (this.lm) {
       this.lm.clearActive()
       this.lm.composite(this.ctx)
+      this.lm.pushHistory()
     } else {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       this.strokes = []
     }
     this._currentStroke = []; this._shapeStart = null
     this._snapshot = null; this._layerSnap = null; this._rainbowHue = 0
+    document.getElementById('canvas-container')?.classList.remove('has-drawn')
+    this._notifyHistoryChange()
   }
 
   getStrokes() { return this.lm ? this.lm.active.strokes : this.strokes }

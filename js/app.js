@@ -80,6 +80,7 @@ class App {
       btn.addEventListener('click', () => {
         this.layerManager.setActive(idx)
         this._renderLayerTabs()
+        this._refreshUndoRedo()
       })
 
       btn.addEventListener('dblclick', e => {
@@ -158,6 +159,7 @@ class App {
       if (this.layerManager.layers.length >= 6) return
       this.layerManager.add()
       this._renderLayerTabs()
+      this._refreshUndoRedo()
     })
 
     const brushSlider = document.getElementById('brush-size')
@@ -181,6 +183,24 @@ class App {
         this._setupWorkspace()
         this.workspace.draw()
       }
+    })
+
+    // Undo / Redo
+    const btnUndo = document.getElementById('btn-undo')
+    const btnRedo = document.getElementById('btn-redo')
+    btnUndo.addEventListener('click', () => { this.canvas.undo(); this._refreshUndoRedo() })
+    btnRedo.addEventListener('click', () => { this.canvas.redo(); this._refreshUndoRedo() })
+    this.canvas.setOnHistoryChange(() => this._refreshUndoRedo())
+    this._refreshUndoRedo()
+
+    document.addEventListener('keydown', e => {
+      const tag = (e.target.tagName || '').toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return
+      const cmd = e.metaKey || e.ctrlKey
+      if (!cmd) return
+      const key = e.key.toLowerCase()
+      if (key === 'z' && !e.shiftKey) { e.preventDefault(); this.canvas.undo(); this._refreshUndoRedo() }
+      else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); this.canvas.redo(); this._refreshUndoRedo() }
     })
 
     const sampSlider = document.getElementById('sampling-interval')
@@ -419,6 +439,13 @@ class App {
     const bar = document.getElementById('status-bar')
     bar.textContent = msg
     bar.className   = type
+  }
+
+  _refreshUndoRedo() {
+    const u = document.getElementById('btn-undo')
+    const r = document.getElementById('btn-redo')
+    if (u) u.disabled = !this.canvas.canUndo()
+    if (r) r.disabled = !this.canvas.canRedo()
   }
 }
 

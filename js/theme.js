@@ -9,7 +9,7 @@ const THEMES = {
       '--accent':     '#F08766',
       '--accent-h':   '#D96A48',
       '--text':       '#2A3530',
-      '--text-muted': '#6A8480',
+      '--text-muted': '#46625E',
       '--danger':     '#D63C2A'
     }
   },
@@ -23,7 +23,7 @@ const THEMES = {
       '--accent':     '#EE34D8',
       '--accent-h':   '#C820B5',
       '--text':       '#3D1840',
-      '--text-muted': '#7D5080',
+      '--text-muted': '#5A3060',
       '--danger':     '#D01040'
     }
   },
@@ -37,7 +37,7 @@ const THEMES = {
       '--accent':     '#F49A2C',
       '--accent-h':   '#F7D960',
       '--text':       '#EEF8E0',
-      '--text-muted': '#8FCC5C',
+      '--text-muted': '#B8E090',
       '--danger':     '#F05030'
     }
   },
@@ -51,7 +51,7 @@ const THEMES = {
       '--accent':     '#F58F7D',
       '--accent-h':   '#D86A55',
       '--text':       '#3C2018',
-      '--text-muted': '#8A5048',
+      '--text-muted': '#6A3828',
       '--danger':     '#D03020'
     }
   },
@@ -65,7 +65,7 @@ const THEMES = {
       '--accent':     '#D49497',
       '--accent-h':   '#B87A7D',
       '--text':       '#2A2E2C',
-      '--text-muted': '#6A7878',
+      '--text-muted': '#4A5858',
       '--danger':     '#B05050'
     }
   },
@@ -79,7 +79,7 @@ const THEMES = {
       '--accent':     '#D89A5B',
       '--accent-h':   '#B87830',
       '--text':       '#2A1A08',
-      '--text-muted': '#6A5030',
+      '--text-muted': '#4F3818',
       '--danger':     '#C83020'
     }
   },
@@ -93,7 +93,7 @@ const THEMES = {
       '--accent':     '#F4B6D1',
       '--accent-h':   '#E090B5',
       '--text':       '#2A2840',
-      '--text-muted': '#6A6890',
+      '--text-muted': '#4A4870',
       '--danger':     '#D04080'
     }
   },
@@ -107,7 +107,7 @@ const THEMES = {
       '--accent':     '#E83D85',
       '--accent-h':   '#C8206A',
       '--text':       '#3A1025',
-      '--text-muted': '#8A4068',
+      '--text-muted': '#682050',
       '--danger':     '#C01840'
     }
   }
