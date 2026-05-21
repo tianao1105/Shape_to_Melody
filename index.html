@@ -30,8 +30,14 @@
     <div id="main">
       <!-- Left sidebar: drawing controls -->
       <div id="sidebar-left">
-        <div class="panel">
-          <h3 data-i18n="brush-tools">笔触</h3>
+        <div class="panel" data-collapse-key="brush">
+          <h3>
+            <span data-i18n="brush-tools">笔触</span>
+            <button class="collapse-btn" type="button" aria-label="toggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </h3>
+          <div class="panel-body">
           <div class="tool-grid" id="tool-btns">
             <button class="tool-btn active" data-mode="freehand">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c4-2 6-12 16-12"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
@@ -54,10 +60,17 @@
               <span data-i18n="tool-rainbow">彩虹</span>
             </button>
           </div>
+          </div>
         </div>
 
-        <div class="panel">
-          <h3 data-i18n="shape-tools">形状</h3>
+        <div class="panel" data-collapse-key="shape">
+          <h3>
+            <span data-i18n="shape-tools">形状</span>
+            <button class="collapse-btn" type="button" aria-label="toggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </h3>
+          <div class="panel-body">
           <div class="tool-grid" id="shape-btns">
             <button class="tool-btn" data-mode="line">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="19" x2="19" y2="5"/></svg>
@@ -84,10 +97,17 @@
               <span data-i18n="tool-star">星形</span>
             </button>
           </div>
+          </div>
         </div>
 
-        <div class="panel">
-          <h3 data-i18n="canvas-mode">画布模式</h3>
+        <div class="panel" data-collapse-key="canvasmode">
+          <h3>
+            <span data-i18n="canvas-mode">画布模式</span>
+            <button class="collapse-btn" type="button" aria-label="toggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </h3>
+          <div class="panel-body">
           <div class="btn-group-v" id="canvas-mode-btns">
             <button class="mode-btn active" data-mode="normal">
               <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/></svg></span>
@@ -102,15 +122,29 @@
               <span data-i18n="mode-kaleidoscope">万花筒</span>
             </button>
           </div>
+          </div>
         </div>
 
-        <div class="panel">
-          <h3><span data-i18n="brush-size">笔刷大小</span> &nbsp;<span id="brush-size-val">6</span></h3>
+        <div class="panel" data-collapse-key="brushsize">
+          <h3>
+            <span><span data-i18n="brush-size">笔刷大小</span> &nbsp;<span id="brush-size-val">6</span></span>
+            <button class="collapse-btn" type="button" aria-label="toggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </h3>
+          <div class="panel-body">
           <input type="range" id="brush-size" min="2" max="24" value="6">
+          </div>
         </div>
 
-        <div class="panel">
-          <h3 data-i18n="color">颜色</h3>
+        <div class="panel" data-collapse-key="color">
+          <h3>
+            <span data-i18n="color">颜色</span>
+            <button class="collapse-btn" type="button" aria-label="toggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </h3>
+          <div class="panel-body">
           <div class="color-row">
             <div class="color-swatch active" data-color="#ffffff" style="background:#ffffff"></div>
             <div class="color-swatch" data-color="#c0c0c0" style="background:#c0c0c0"></div>
@@ -128,6 +162,7 @@
             <div class="color-swatch" data-color="#0000ff" style="background:#0000ff"></div>
             <div class="color-swatch" data-color="#ff00ff" style="background:#ff00ff"></div>
             <div class="color-swatch" data-color="#800080" style="background:#800080"></div>
+          </div>
           </div>
         </div>
 
@@ -149,6 +184,17 @@
 
       <!-- Canvas area -->
       <div id="canvas-area">
+        <!-- Mode toggle: vertical bookmark tabs on the LEFT edge of canvas -->
+        <div id="mode-toggle">
+          <button class="mode-tab active" data-canvas-mode="draw">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l3.5-1L20 6.5a2.1 2.1 0 0 0-3-3L3.5 17 2.5 21z"/><path d="M14 6l3 3"/></svg>
+            <span data-i18n="tab-draw">绘画</span>
+          </button>
+          <button class="mode-tab" data-canvas-mode="upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span data-i18n="tab-upload">上传</span>
+          </button>
+        </div>
         <div id="canvas-wrap">
           <div id="layer-bar">
             <div id="layer-tabs">
@@ -169,6 +215,24 @@
             <div class="canvas-hint" id="canvas-hint">
               <span class="hint-icon">♪</span>
               <span data-i18n="canvas-hint">在这里画点什么</span>
+            </div>
+            <div id="upload-dropzone" class="hidden" tabindex="0">
+              <div class="dz-plus" aria-hidden="true">
+                <svg viewBox="0 0 100 100" class="dz-rings">
+                  <circle class="ring r1" cx="50" cy="50" r="44"/>
+                  <circle class="ring r2" cx="50" cy="50" r="36"/>
+                  <circle class="ring r3" cx="50" cy="50" r="28"/>
+                </svg>
+                <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="6" x2="12" y2="18"/>
+                  <line x1="6" y1="12" x2="18" y2="12"/>
+                </svg>
+              </div>
+              <div class="dz-text">
+                <strong data-i18n="dz-title">拖入图片或点击浏览</strong>
+                <span    data-i18n="dz-sub">PNG · JPG · 自动转换为线条与旋律</span>
+              </div>
+              <input type="file" id="image-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
             </div>
             <div id="partial-overlay" class="hidden">
               <div id="partial-band">
@@ -256,6 +320,56 @@
     </div>
   </div>
 
+  <!-- Intro animation overlay -->
+  <div id="intro-overlay">
+    <div class="intro-stage">
+      <div class="intro-words" id="intro-words"></div>
+      <svg class="intro-piano" id="intro-piano" viewBox="0 0 220 100" aria-hidden="true">
+        <rect class="piano-body" x="2" y="6" width="216" height="88" rx="10"/>
+        <rect class="piano-top"  x="6" y="10" width="208" height="14" rx="4"/>
+        <g class="white-keys">
+          <rect x="10" y="30" width="20" height="60" rx="2"/>
+          <rect x="32" y="30" width="20" height="60" rx="2"/>
+          <rect x="54" y="30" width="20" height="60" rx="2"/>
+          <rect x="76" y="30" width="20" height="60" rx="2"/>
+          <rect x="98" y="30" width="20" height="60" rx="2"/>
+          <rect x="120" y="30" width="20" height="60" rx="2"/>
+          <rect x="142" y="30" width="20" height="60" rx="2"/>
+          <rect x="164" y="30" width="20" height="60" rx="2"/>
+          <rect x="186" y="30" width="20" height="60" rx="2"/>
+        </g>
+        <g class="black-keys" fill="#16161c">
+          <rect x="24" y="30" width="14" height="38" rx="2"/>
+          <rect x="46" y="30" width="14" height="38" rx="2"/>
+          <rect x="90" y="30" width="14" height="38" rx="2"/>
+          <rect x="112" y="30" width="14" height="38" rx="2"/>
+          <rect x="134" y="30" width="14" height="38" rx="2"/>
+          <rect x="178" y="30" width="14" height="38" rx="2"/>
+          <rect x="200" y="30" width="14" height="38" rx="2"/>
+        </g>
+      </svg>
+    </div>
+    <button id="intro-skip" type="button">Skip ›</button>
+  </div>
+
+  <!-- Tutorial overlay (shown after intro) -->
+  <div id="tutorial-overlay" class="hidden">
+    <div class="tutorial-backdrop"></div>
+    <div class="tutorial-bubble" id="tutorial-bubble">
+      <div class="tut-step">1 / 4</div>
+      <h4 class="tut-title">欢迎！</h4>
+      <p   class="tut-body">在画布上画点东西，或者上传一张图片。</p>
+      <div class="tut-actions">
+        <button id="tut-skip"  type="button" class="tut-btn-ghost">跳过</button>
+        <button id="tut-next"  type="button" class="tut-btn-primary">下一步</button>
+      </div>
+    </div>
+    <svg class="tutorial-arrow" id="tutorial-arrow" viewBox="0 0 80 80" aria-hidden="true">
+      <path d="M10 40 Q 35 10 65 35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 6"/>
+      <path d="M60 30 L 68 38 L 58 40 Z" fill="currentColor"/>
+    </svg>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
   <script src="js/theme.js"></script>
@@ -267,6 +381,8 @@
   <script src="js/layers.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/export.js"></script>
+  <script src="js/imageImport.js"></script>
+  <script src="js/intro.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

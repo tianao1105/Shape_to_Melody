@@ -47,11 +47,17 @@ class App {
       this._setStatus('')
     }
 
+    this._canvasMode      = 'draw'
+    this._imageImporter   = null
+
     this._renderLayerTabs()
     this._bindUI()
     this._bindLayerProps()
     this._bindPartialBand()
     this._bindViewToggle()
+    this._bindCanvasModeToggle()
+    this._bindUpload()
+    this._bindCollapse()
   }
 
   /* ── Layer tabs ──────────────────────────────────────────── */
@@ -289,11 +295,22 @@ class App {
     const mainCanvas = document.getElementById('main-canvas')
     const prCanvas   = document.getElementById('piano-roll-canvas')
     const wsCanvas   = document.getElementById('workspace-canvas')
+    const dropzone   = document.getElementById('upload-dropzone')
+    const modeToggle = document.getElementById('mode-toggle')
 
     mainCanvas.classList.add('hidden')
     prCanvas.classList.add('hidden')
     wsCanvas.classList.add('hidden')
     this._togglePartialOverlay(false)
+
+    // Hide dropzone + left mode toggle when not on the drawing view
+    if (view !== 'drawing') {
+      if (dropzone) dropzone.classList.add('hidden')
+      if (modeToggle) modeToggle.style.visibility = 'hidden'
+    } else {
+      if (modeToggle) modeToggle.style.visibility = ''
+      if (this._canvasMode === 'upload' && dropzone) dropzone.classList.remove('hidden')
+    }
 
     if (view === 'drawing') {
       mainCanvas.classList.remove('hidden')
@@ -312,6 +329,122 @@ class App {
       this._setupWorkspace()
       this.workspace.draw()
     }
+  }
+
+  /* ── Canvas mode (Draw / Upload) ─────────────────────────── */
+
+  _bindCanvasModeToggle() {
+    document.querySelectorAll('.mode-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        this._switchCanvasMode(btn.dataset.canvasMode)
+      })
+    })
+  }
+
+  _switchCanvasMode(mode) {
+    this._canvasMode = mode
+    const container = document.getElementById('canvas-container')
+    const dropzone  = document.getElementById('upload-dropzone')
+    const hint      = document.getElementById('canvas-hint')
+    if (mode === 'upload') {
+      dropzone.classList.remove('hidden')
+      container.classList.add('upload-mode')
+      if (hint) hint.style.opacity = '0'
+    } else {
+      dropzone.classList.add('hidden')
+      container.classList.remove('upload-mode')
+      if (hint) hint.style.opacity = ''
+    }
+  }
+
+  /* ── Upload (click + drag-drop) ──────────────────────────── */
+
+  _bindUpload() {
+    const dropzone = document.getElementById('upload-dropzone')
+    const input    = document.getElementById('image-input')
+    if (!dropzone || !input) return
+
+    dropzone.addEventListener('click', () => input.click())
+    dropzone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click() }
+    })
+
+    const preventAndOver = e => { e.preventDefault(); dropzone.classList.add('drag-over') }
+    const clearOver      = e => { e.preventDefault(); dropzone.classList.remove('drag-over') }
+    dropzone.addEventListener('dragenter', preventAndOver)
+    dropzone.addEventListener('dragover',  preventAndOver)
+    dropzone.addEventListener('dragleave', clearOver)
+    dropzone.addEventListener('drop', e => {
+      clearOver(e)
+      const file = e.dataTransfer?.files?.[0]
+      if (file) this._handleImageFile(file)
+    })
+
+    input.addEventListener('change', () => {
+      const file = input.files?.[0]
+      if (file) {
+        this._handleImageFile(file)
+        input.value = ''
+      }
+    })
+
+    // Allow dragging anywhere on the window when in upload mode
+    window.addEventListener('dragover', e => {
+      if (this._canvasMode !== 'upload') return
+      e.preventDefault()
+    })
+    window.addEventListener('drop', e => {
+      if (this._canvasMode !== 'upload') return
+      e.preventDefault()
+      if (e.target.closest('#upload-dropzone')) return // already handled
+      const file = e.dataTransfer?.files?.[0]
+      if (file) this._handleImageFile(file)
+    })
+  }
+
+  async _handleImageFile(file) {
+    if (!this._imageImporter) {
+      this._imageImporter = new ImageImporter(this.canvas, this.layerManager)
+    }
+    this._setStatus(t('status-loading'), '')
+    try {
+      const result = await this._imageImporter.loadFile(file)
+      if (result.strokes > 0) {
+        this._setStatus(t('status-imported', { n: result.strokes }), '')
+        // Switch back to draw mode so user sees the imported lines
+        const drawTab = document.querySelector('.mode-tab[data-canvas-mode="draw"]')
+        if (drawTab) drawTab.click()
+      } else {
+        this._setStatus(t('status-noimport'), 'error')
+      }
+      this._refreshUndoRedo()
+    } catch (err) {
+      console.error('Image import failed:', err)
+      this._setStatus(t('status-noimport'), 'error')
+    }
+  }
+
+  /* ── Panel collapse ──────────────────────────────────────── */
+
+  _bindCollapse() {
+    document.querySelectorAll('.panel[data-collapse-key]').forEach(panel => {
+      const key      = panel.dataset.collapseKey
+      const storeKey = 's2m-collapse-' + key
+      if (localStorage.getItem(storeKey) === 'yes') panel.classList.add('collapsed')
+
+      const h3 = panel.querySelector('h3')
+      if (!h3) return
+      h3.style.cursor     = 'pointer'
+      h3.style.userSelect = 'none'
+      h3.addEventListener('click', e => {
+        // Avoid triggering when interacting with a chip / input inside the title
+        if (e.target.tagName === 'INPUT') return
+        panel.classList.toggle('collapsed')
+        localStorage.setItem(storeKey, panel.classList.contains('collapsed') ? 'yes' : 'no')
+      })
+    })
   }
 
   /* ── Partial band drag ───────────────────────────────────── */
@@ -449,4 +582,14 @@ class App {
   }
 }
 
-window.addEventListener('load', () => { window.app = new App() })
+window.addEventListener('load', () => {
+  window.app = new App()
+
+  // Opening animation, then transparent tutorial overlay
+  const intro = new IntroAnimation()
+  intro.onDone = () => {
+    const tut = new Tutorial()
+    setTimeout(() => tut.start(), 250)
+  }
+  intro.start()
+})
