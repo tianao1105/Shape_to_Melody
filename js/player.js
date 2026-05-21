@@ -96,7 +96,7 @@ class Player {
     const active = layers.filter(l => l.notes.length > 0)
     if (!active.length) return
 
-    Tone.getTransport().bpm.value = this.bpm
+    Tone.Transport.bpm.value = this.bpm
     const dur     = '8n'
     const stepSec = Tone.Time(dur).toSeconds()
     this._totalTime = active.flatMap(l => l.notes).length * stepSec
@@ -116,14 +116,14 @@ class Player {
 
       layer.notes.forEach(evt => {
         const t = (evt.x / canvasWidth) * this._totalTime
-        Tone.getTransport().schedule(at => trigger(evt.note, dur, at), t)
+        Tone.Transport.schedule(at => trigger(evt.note, dur, at), t)
       })
     }
 
-    Tone.getTransport().start()
+    Tone.Transport.start()
     this.isPlaying = true
 
-    Tone.getTransport().scheduleOnce(() => {
+    Tone.Transport.scheduleOnce(() => {
       this._cleanup()
       if (this.onStop) this.onStop()
     }, `+${this._totalTime + 2}`)
@@ -137,8 +137,8 @@ class Player {
   }
 
   _cleanup() {
-    Tone.getTransport().stop()
-    Tone.getTransport().cancel()
+    Tone.Transport.stop()
+    Tone.Transport.cancel()
     this._synths.forEach(({ synth, vol }) => {
       synth.releaseAll?.()
       synth.disconnect(); synth.dispose()
@@ -150,6 +150,6 @@ class Player {
 
   setBPM(bpm) {
     this.bpm = bpm
-    if (this.isPlaying) Tone.getTransport().bpm.value = bpm
+    if (this.isPlaying) Tone.Transport.bpm.value = bpm
   }
 }

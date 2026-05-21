@@ -24,7 +24,6 @@ class Tutorial {
         place: 'left' },
     ]
   }
-
   async start() {
     if (!this.overlay) return
     if (localStorage.getItem('s2m-tutorial-done-v4') === 'yes') return
@@ -34,50 +33,24 @@ class Tutorial {
     window.addEventListener('resize', this._resizeH)
     document.getElementById('tut-skip').addEventListener('click', () => this._finish())
     const nx = document.getElementById('tut-next')
-    nx.style.display = 'none'  // auto-advancing; hide manual Next
-
-    try {
-      await this._runFlow()
-    } catch (e) {
-      console.error('tutorial flow error', e)
-    }
+    if (nx) nx.style.display = 'none'
+    try { await this._runFlow() } catch (e) { console.error('tutorial flow', e) }
     this._finish()
   }
-
   async _runFlow() {
-    // Step 1: canvas + animated draw
-    this._goto(0)
-    await this._sleep(700)
-    await this._autoDraw()
-    await this._sleep(900)
+    this._goto(0); await this._sleep(700)
+    await this._autoDraw(); await this._sleep(900)
     if (this._finished) return
-
-    // Step 2: brush panel
-    this._goto(1)
-    await this._sleep(2400)
+    this._goto(1); await this._sleep(2400)
     if (this._finished) return
-
-    // Step 3: upload mode
-    this._goto(2)
-    await this._sleep(2400)
+    this._goto(2); await this._sleep(2400)
     if (this._finished) return
-
-    // Step 4: convert + play
-    this._goto(3)
-    await this._sleep(500)
-    this._autoConvert()
-    await this._sleep(700)
-    await this._autoPlay()
-    await this._sleep(800)
+    this._goto(3); await this._sleep(500)
+    this._autoConvert(); await this._sleep(700)
+    await this._autoPlay(); await this._sleep(800)
   }
-
   _sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
-
-  _goto(i) {
-    this.idx = i
-    this._render()
-  }
-
+  _goto(i) { this.idx = i; this._render() }
   _render() {
     const s = this.steps[this.idx]
     this.bubble.querySelector('.tut-step').textContent  = `${this.idx + 1} / ${this.steps.length}`
@@ -88,7 +61,6 @@ class Tutorial {
     if (t) { t.classList.add('tut-spotlight'); this._spotEl = t }
     requestAnimationFrame(() => this._position())
   }
-
   async _autoDraw() {
     const cm = window.app && window.app.canvas
     if (!cm || !cm.lm) return
@@ -103,16 +75,13 @@ class Tutorial {
       pts.push({ x, y })
     }
     const layer = cm.lm.active
-    // Commit stroke first so resize observers don't see an empty canvas
     layer.strokes.push(pts.map(p => ({ x: p.x, y: p.y })))
     cm._refreshEmptyHint()
-
     const ctx = layer.ctx
     ctx.save()
     ctx.strokeStyle = cm.brushColor || '#ffffff'
     ctx.lineWidth   = Math.max(5, cm.brushSize || 6)
-    ctx.lineCap     = 'round'
-    ctx.lineJoin    = 'round'
+    ctx.lineCap     = 'round'; ctx.lineJoin = 'round'
     for (let i = 1; i < pts.length; i++) {
       if (this._finished) { ctx.restore(); return }
       const a = pts[i - 1], b = pts[i]
@@ -124,14 +93,12 @@ class Tutorial {
     cm.lm.pushHistory()
     cm._notifyHistoryChange()
   }
-
   _autoConvert() {
     const app = window.app
     if (!app || !app._convert) return
     if (app.canvas.lm && app.canvas.lm.isEmpty()) return
     try { app._convert() } catch (e) { console.warn(e) }
   }
-
   async _autoPlay() {
     const app = window.app
     if (!app || !app._play) return
@@ -140,7 +107,6 @@ class Tutorial {
       await app._play()
     } catch (e) { console.warn('tutorial autoplay', e) }
   }
-
   _position() {
     const s = this.steps[this.idx]
     const t = document.querySelector(s.sel)
@@ -158,25 +124,17 @@ class Tutorial {
     bT = Math.max(pad, Math.min(vh - bH - pad, bT))
     this.bubble.style.left = bL + 'px'
     this.bubble.style.top  = bT + 'px'
+    const a = this.arrow.style
     if (s.place === 'right') {
-      this.arrow.style.left = (r.right + 6) + 'px'
-      this.arrow.style.top  = (r.top + r.height/2 - 40) + 'px'
-      this.arrow.style.transform = 'scaleX(-1)'
+      a.left = (r.right + 6) + 'px'; a.top = (r.top + r.height/2 - 40) + 'px'; a.transform = 'scaleX(-1)'
     } else if (s.place === 'left') {
-      this.arrow.style.left = (r.left - 86) + 'px'
-      this.arrow.style.top  = (r.top + r.height/2 - 40) + 'px'
-      this.arrow.style.transform = 'none'
+      a.left = (r.left - 86) + 'px'; a.top = (r.top + r.height/2 - 40) + 'px'; a.transform = 'none'
     } else if (s.place === 'top') {
-      this.arrow.style.left = (r.left + r.width/2 - 40) + 'px'
-      this.arrow.style.top  = (r.top - 86) + 'px'
-      this.arrow.style.transform = 'rotate(90deg)'
+      a.left = (r.left + r.width/2 - 40) + 'px'; a.top = (r.top - 86) + 'px'; a.transform = 'rotate(90deg)'
     } else {
-      this.arrow.style.left = (r.left + r.width/2 - 40) + 'px'
-      this.arrow.style.top  = (r.bottom + 6) + 'px'
-      this.arrow.style.transform = 'rotate(-90deg)'
+      a.left = (r.left + r.width/2 - 40) + 'px'; a.top = (r.bottom + 6) + 'px'; a.transform = 'rotate(-90deg)'
     }
   }
-
   _finish() {
     if (this._finished) return
     this._finished = true

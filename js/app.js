@@ -319,9 +319,10 @@ class App {
     } else if (view === 'pianoroll') {
       prCanvas.classList.remove('hidden')
       const notes = this.layerManager.active.notes
-      if (notes.length > 0 && !this.player.isPlaying) {
+      if (notes.length > 0) {
         this._setupPianoRoll(notes)
-        this.pianoRoll.drawStatic()
+        if (this.player.isPlaying) this.pianoRoll.start()
+        else                       this.pianoRoll.drawStatic()
       }
 
     } else if (view === 'workspace') {

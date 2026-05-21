@@ -80,7 +80,7 @@ class PianoRoll {
 
   _tick() {
     if (!this._running) return
-    this._drawFrame(Tone.getTransport().seconds, true)
+    this._drawFrame(Tone.Transport.seconds, true)
     this._animId = requestAnimationFrame(() => this._tick())
   }
 
