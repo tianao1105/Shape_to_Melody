@@ -8,7 +8,7 @@ class App {
     this.layerManager  = new LayerManager()
 
     this.convertMode      = 'full'
-    this.samplingInterval = 5
+    this.samplingInterval = 60
     this._currentView     = 'drawing'
 
     this._partialDragging = false

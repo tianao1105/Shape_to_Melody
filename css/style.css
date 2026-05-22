@@ -1248,30 +1248,86 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 /* ── Tutorial overlay ─────────────────────────────────────── */
-/* No z-index here: putting one creates a stacking context that traps
-   our z=1010 bubble below the z=901 spotlight target outside this tree. */
+/* position:fixed already creates a stacking context (z-index:auto = 0 in
+   root). Without an explicit z-index, root-level siblings like #mode-toggle
+   / #view-toggle (z-index:10) paint on top of the entire overlay subtree —
+   so the bookmark tabs would appear undimmed. z-index:9999 hoists the whole
+   overlay above any normal UI. Internal z-indices below are now relative
+   to THIS stacking context, so they can be small. */
 #tutorial-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 9999;
 }
 #tutorial-overlay:not(.hidden) { pointer-events: auto; }
 
-.tutorial-backdrop {
+/* Interactive final step: let real UI clicks pass through, except inside
+   the bubble (so the skip button still works). */
+#tutorial-overlay.tut-interactive { pointer-events: none; }
+#tutorial-overlay.tut-interactive .tutorial-bubble { pointer-events: auto; }
+
+/* Spotlight hole — IS the dim layer. The huge outward box-shadow tints
+   everything OUTSIDE the rounded rect; INSIDE the rect there is no fill so
+   the target shows through clean. z-index 9000 is pushed above any UI element
+   that might have its own stacking context (mode/view toggles, sidebars,
+   play-controls panel) so we don't get "buttons appear highlighted, canvas
+   stays dim" inversions. */
+.tut-hole {
   position: fixed;
-  inset: 0;
-  background: rgba(20, 22, 28, 0.55);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  left: 0; top: 0;
+  width: 0; height: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 9000;
+  box-shadow: 0 0 0 9999px rgba(20, 22, 28, 0.55);
   animation: tutFadeIn 0.3s ease;
-  z-index: 900;
+  transition: left 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              top 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              width 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              height 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              border-radius 0.35s ease;
 }
+
+/* The glowing accent ring drawn over the hole's outline. */
+.tut-ring {
+  position: fixed;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 9001;
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 6px rgba(240,135,102,0.18),
+    0 0 28px 4px rgba(240,135,102,0.30);
+  transition: left 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              top 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              width 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              height 0.35s cubic-bezier(.34, 1.56, .64, 1),
+              border-radius 0.35s ease;
+  animation: tutRingPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes tutRingPulse {
+  0%, 100% { box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 6px rgba(240,135,102,0.18),
+    0 0 24px 2px rgba(240,135,102,0.25); }
+  50%      { box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 7px rgba(240,135,102,0.28),
+    0 0 36px 6px rgba(240,135,102,0.45); }
+}
+
+.tut-hole.hidden,
+.tut-ring.hidden { display: none; }
 
 @keyframes tutFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .tutorial-bubble {
   position: fixed;
-  z-index: 1010;
+  z-index: 9010;
   background: var(--surface);
   border-radius: var(--radius);
   padding: 16px 18px;
@@ -1333,32 +1389,24 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .tutorial-arrow {
   position: fixed;
-  z-index: 1010;
-  width: 48px;
-  height: 48px;
+  z-index: 9010;
+  width: 36px;
+  height: 36px;
   color: var(--accent);
   pointer-events: none;
   transition: top 0.35s cubic-bezier(.34, 1.56, .64, 1), left 0.35s cubic-bezier(.34, 1.56, .64, 1), transform 0.3s ease;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.30));
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.25));
   animation: tutArrowBob 1.4s ease-in-out infinite;
   transform-origin: center;
 }
 
 @keyframes tutArrowBob {
-  0%,100% { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.30)); }
-  50%     { filter: drop-shadow(0 4px 10px rgba(240,135,102,0.55)); }
+  0%,100% { filter: drop-shadow(0 2px 5px rgba(0,0,0,0.25)); }
+  50%     { filter: drop-shadow(0 4px 9px rgba(240,135,102,0.50)); }
 }
 
-/* Spotlight ring around the active target (lifted above the dimmed backdrop) */
-.tut-spotlight {
-  position: relative;
-  z-index: 901;
-  box-shadow:
-    0 0 0 4px rgba(240,135,102,0.55),
-    0 0 24px rgba(240,135,102,0.35) !important;
-  border-radius: var(--radius) !important;
-  transition: box-shadow 0.3s;
-}
+/* Old .tut-spotlight removed — highlight is now drawn by .tut-hole + .tut-ring
+   so we never touch the target element's CSS or its stacking context. */
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 960px) {

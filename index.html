@@ -272,8 +272,8 @@
         </div>
 
         <div class="panel">
-          <h3><span data-i18n="sampling-interval">采样间隔</span> &nbsp;<span id="sampling-val">5</span>px</h3>
-          <input type="range" id="sampling-interval" min="1" max="200" value="5">
+          <h3><span data-i18n="sampling-interval">采样间隔</span> &nbsp;<span id="sampling-val">60</span>px</h3>
+          <input type="range" id="sampling-interval" min="1" max="200" value="60">
         </div>
 
         <div class="panel">
@@ -356,7 +356,9 @@
 
   <!-- Tutorial overlay (shown after intro) -->
   <div id="tutorial-overlay" class="hidden">
-    <div class="tutorial-backdrop"></div>
+    <!-- .tut-hole's own box-shadow is the dim layer; no separate backdrop. -->
+    <div class="tut-hole" id="tut-hole"></div>
+    <div class="tut-ring" id="tut-ring"></div>
     <div class="tutorial-bubble" id="tutorial-bubble">
       <div class="tut-step">1 / 4</div>
       <h4 class="tut-title">欢迎！</h4>
@@ -366,8 +368,8 @@
         <button id="tut-next"  type="button" class="tut-btn-primary">下一步</button>
       </div>
     </div>
-    <svg class="tutorial-arrow" id="tutorial-arrow" viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M 10 14 L 38 24 L 10 34 L 18 24 Z" fill="currentColor"/>
+    <svg class="tutorial-arrow" id="tutorial-arrow" viewBox="0 0 40 40" aria-hidden="true">
+      <polyline points="14,10 30,20 14,30" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </div>
 

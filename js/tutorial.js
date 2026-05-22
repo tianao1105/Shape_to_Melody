@@ -5,20 +5,26 @@ class Tutorial {
     this.overlay  = document.getElementById('tutorial-overlay')
     this.bubble   = document.getElementById('tutorial-bubble')
     this.arrow    = document.getElementById('tutorial-arrow')
+    this.hole     = document.getElementById('tut-hole')
+    this.ring     = document.getElementById('tut-ring')
     this.idx      = 0
-    this._spotEl  = null
     this._resizeH = null
     this._finished = false
     this.steps = [
-      { sel: '#canvas-container',                titleKey: 'tut-1-title', bodyKey: 'tut-1-body', place: 'top' },
-      { sel: '#sidebar-left .panel:first-child', titleKey: 'tut-2-title', bodyKey: 'tut-2-body', place: 'right' },
-      { sel: '#mode-toggle',                     titleKey: 'tut-3-title', bodyKey: 'tut-3-body', place: 'right' },
-      { sel: '#play-controls',                   titleKey: 'tut-4-title', bodyKey: 'tut-4-body', place: 'left' },
+      // Tighter selector for step 1: the canvas itself, not the whole container
+      // (the container also holds the dropzone, hints, partial overlay, etc.)
+      { sel: '#main-canvas',                                   titleKey: 'tut-1-title', bodyKey: 'tut-1-body', place: 'top',   radius: 16, pad: 8  },
+      { sel: '#sidebar-left .panel:first-child',               titleKey: 'tut-2-title', bodyKey: 'tut-2-body', place: 'right', radius: 16, pad: 6  },
+      { sel: '#mode-toggle',                                   titleKey: 'tut-3-title', bodyKey: 'tut-3-body', place: 'right', radius: 14, pad: 4  },
+      { sel: '#play-controls',                                 titleKey: 'tut-4-title', bodyKey: 'tut-4-body', place: 'left',  radius: 16, pad: 8  },
+      // Final step is interactive — user clicks the highlighted Drawing view
+      // tab to return to the canvas. interactive:true lets clicks pass through.
+      { sel: '#view-toggle .view-btn[data-view="drawing"]',    titleKey: 'tut-5-title', bodyKey: 'tut-5-body', place: 'left',  radius: 12, pad: 4, interactive: true },
     ]
   }
   async start() {
     if (!this.overlay) return
-    if (localStorage.getItem('s2m-tutorial-done-v4') === 'yes') return
+    if (localStorage.getItem('s2m-tutorial-done-v5') === 'yes') return
     this._run()
   }
   // Manual re-trigger (from help button) — bypasses localStorage flag
@@ -27,6 +33,7 @@ class Tutorial {
     this._run()
   }
   _run() {
+    this._finished = false
     this.overlay.classList.remove('hidden')
     document.body.classList.add('tut-locked')
     this._resizeH = () => this._position()
@@ -51,7 +58,17 @@ class Tutorial {
     if (this._finished) return
     this._goto(3); await this._sleep(500)
     this._autoConvert(); await this._sleep(700)
-    await this._autoPlay(); await this._sleep(800)
+    // Switch to Score view so user sees the piano-roll animation during playback
+    this._switchToScore()
+    await this._sleep(300)
+    await this._autoPlay()
+    // Block on actual playback finishing (poll player.isPlaying)
+    await this._waitForPlaybackEnd(20000)
+    if (this._finished) return
+    // Final step: highlight the Drawing view bookmark and wait for the user
+    // to actually click it.
+    this._goto(4)
+    await this._waitForUserClick(25000)
   }
   _sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
   _goto(i) { this.idx = i; this._render() }
@@ -61,10 +78,56 @@ class Tutorial {
     this.bubble.querySelector('.tut-step').textContent  = `${this.idx + 1} / ${this.steps.length}`
     this.bubble.querySelector('.tut-title').textContent = T(s.titleKey)
     this.bubble.querySelector('.tut-body').textContent  = T(s.bodyKey)
-    if (this._spotEl) this._spotEl.classList.remove('tut-spotlight')
-    const el = document.querySelector(s.sel)
-    if (el) { el.classList.add('tut-spotlight'); this._spotEl = el }
+    // Toggle click-through on the overlay so the user can actually click the
+    // highlighted target on interactive steps.
+    this.overlay.classList.toggle('tut-interactive', !!s.interactive)
     requestAnimationFrame(() => this._position())
+  }
+  _switchToScore() {
+    const app = window.app
+    if (!app || !app._switchView) return
+    try {
+      document.querySelectorAll('.view-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === 'pianoroll')
+      })
+      app._switchView('pianoroll')
+    } catch (e) { console.warn('tutorial switchToScore', e) }
+  }
+  _waitForPlaybackEnd(maxMs = 20000) {
+    // NOTE: player.isPlaying isn't a reliable cue here — player.js schedules
+    // its stop at `+${totalTime + 2}`, so isPlaying stays true for 2 extra
+    // seconds AFTER the last audible note. Polling it would mean ~2s of dead
+    // air before step 5 appears. Use the known totalTime instead and add a
+    // short ring-out tail so we advance as soon as the music is done.
+    return new Promise(resolve => {
+      const p = window.app && window.app.player
+      const total = (p && p.getTotalTime && p.getTotalTime()) || 4
+      const waitMs = Math.min(maxMs, Math.max(600, total * 1000 + 500))
+      const finish = () => { clearInterval(poll); resolve() }
+      const timer = setTimeout(finish, waitMs)
+      // Watchdog: if the user hits skip mid-wait, _finished flips and we bail
+      // out immediately instead of stalling for the full waitMs.
+      const poll = setInterval(() => {
+        if (this._finished) { clearTimeout(timer); clearInterval(poll); resolve() }
+      }, 150)
+    })
+  }
+  _waitForUserClick(maxMs = 25000) {
+    return new Promise(resolve => {
+      const target = document.querySelector(this.steps[this.idx].sel)
+      if (!target) { resolve(); return }
+      let done = false
+      const cleanup = () => {
+        if (done) return; done = true
+        target.removeEventListener('click', onClick, true)
+        clearTimeout(timer)
+        resolve()
+      }
+      const onClick = () => { cleanup(); this._finish() }
+      // capture-phase so we catch the click even if a parent handler stops propagation
+      target.addEventListener('click', onClick, true)
+      const timer = setTimeout(() => { cleanup(); if (!this._finished) this._finish() }, maxMs)
+    })
   }
   async _autoDraw() {
     const cm = window.app && window.app.canvas
@@ -116,41 +179,93 @@ class Tutorial {
     const s = this.steps[this.idx]
     const target = document.querySelector(s.sel)
     if (!target) return
-    const r = target.getBoundingClientRect()
+    const r   = target.getBoundingClientRect()
+    const pad = s.pad ?? 6
+    const rad = s.radius ?? 12
+
+    // Position the hole + ring around the target's bounding box
+    if (this.hole) {
+      this.hole.style.left          = (r.left - pad) + 'px'
+      this.hole.style.top           = (r.top  - pad) + 'px'
+      this.hole.style.width         = (r.width  + pad * 2) + 'px'
+      this.hole.style.height        = (r.height + pad * 2) + 'px'
+      this.hole.style.borderRadius  = rad + 'px'
+    }
+    if (this.ring) {
+      this.ring.style.left          = (r.left - pad) + 'px'
+      this.ring.style.top           = (r.top  - pad) + 'px'
+      this.ring.style.width         = (r.width  + pad * 2) + 'px'
+      this.ring.style.height        = (r.height + pad * 2) + 'px'
+      this.ring.style.borderRadius  = rad + 'px'
+    }
+
     const vw = window.innerWidth, vh = window.innerHeight
     const bW = this.bubble.offsetWidth, bH = this.bubble.offsetHeight
-    const pad = 24
+    const margin = 24
     let bL, bT
     if (s.place === 'right') { bL = r.right + 80; bT = r.top + r.height/2 - bH/2 }
     else if (s.place === 'left') { bL = r.left - 80 - bW; bT = r.top + r.height/2 - bH/2 }
     else if (s.place === 'top') { bL = r.left + r.width/2 - bW/2; bT = r.top - 60 - bH }
     else { bL = r.left + r.width/2 - bW/2; bT = r.bottom + 60 }
-    bL = Math.max(pad, Math.min(vw - bW - pad, bL))
-    bT = Math.max(pad, Math.min(vh - bH - pad, bT))
+    bL = Math.max(margin, Math.min(vw - bW - margin, bL))
+    bT = Math.max(margin, Math.min(vh - bH - margin, bT))
     this.bubble.style.left = bL + 'px'
     this.bubble.style.top  = bT + 'px'
 
-    // Position arrow as a chevron pointing TOWARD the target from the bubble side
+    // Position arrow in the gap between bubble's nearest edge and target.
+    // Computing from the bubble's ACTUAL placement (after viewport clamping)
+    // prevents the arrow from landing inside the bubble's text on small screens.
+    // Arrow box = 36×36 → half = 18.
     const aE = this.arrow
-    aE.style.display = 'block'
-    const cx = r.left + r.width / 2
-    const cy = r.top + r.height / 2
-    let ax, ay, rot
-    if (s.place === 'top')    { ax = cx - 24; ay = r.top - 50;       rot = '90deg' }
-    else if (s.place === 'bottom') { ax = cx - 24; ay = r.bottom + 4; rot = '-90deg' }
-    else if (s.place === 'left')   { ax = r.left - 56; ay = cy - 24;  rot = '0deg' }
-    else /* right */               { ax = r.right + 4;  ay = cy - 24;  rot = '180deg' }
-    aE.style.left = ax + 'px'
-    aE.style.top  = ay + 'px'
-    aE.style.transform = `rotate(${rot})`
+    const half = 18
+    const bRight = bL + bW, bBottom = bT + bH
+    const bCX = bL + bW / 2, bCY = bT + bH / 2
+    let ax, ay, rot, show = true
+
+    if (s.place === 'top') {
+      // bubble above target → arrow centered in the vertical gap, pointing DOWN
+      const gap = r.top - bBottom
+      if (gap < 24) show = false
+      ay  = bBottom + (gap - 36) / 2
+      ax  = bCX - half
+      rot = '90deg'
+    } else if (s.place === 'bottom') {
+      const gap = bT - r.bottom
+      if (gap < 24) show = false
+      ay  = r.bottom + (gap - 36) / 2
+      ax  = bCX - half
+      rot = '-90deg'
+    } else if (s.place === 'left') {
+      // bubble to the left of target → arrow in horizontal gap, pointing RIGHT
+      const gap = r.left - bRight
+      if (gap < 24) show = false
+      ax  = bRight + (gap - 36) / 2
+      ay  = bCY - half
+      rot = '0deg'
+    } else { /* right */
+      const gap = bL - r.right
+      if (gap < 24) show = false
+      ax  = r.right + (gap - 36) / 2
+      ay  = bCY - half
+      rot = '180deg'
+    }
+
+    if (show) {
+      aE.style.display   = 'block'
+      aE.style.left      = ax + 'px'
+      aE.style.top       = ay + 'px'
+      aE.style.transform = `rotate(${rot})`
+    } else {
+      aE.style.display = 'none'
+    }
   }
   _finish() {
     if (this._finished) return
     this._finished = true
-    if (this._spotEl) this._spotEl.classList.remove('tut-spotlight')
     this.overlay.classList.add('hidden')
+    this.overlay.classList.remove('tut-interactive')
     document.body.classList.remove('tut-locked')
-    localStorage.setItem('s2m-tutorial-done-v4', 'yes')
+    localStorage.setItem('s2m-tutorial-done-v5', 'yes')
     if (this._resizeH) window.removeEventListener('resize', this._resizeH)
   }
 }
