@@ -180,18 +180,49 @@ class Tutorial {
     // been zero user gesture by the time we get here. In that state
     // `await Tone.start()` (and the one inside player._init) NEVER resolves —
     // it sits there forever waiting for a gesture, freezing the whole flow
-    // at step 4. Detect that case up front and just skip playback so the
-    // tutorial can still walk the user to step 5.
+    // at step 4. Detect that case up front and ask the user for one click;
+    // the click itself is the gesture that unlocks audio, then we play.
     try {
       const ctx = (window.Tone && Tone.context) ? Tone.context : null
       if (ctx && ctx.state !== 'running') {
-        console.warn('tutorial: audio context not running, skipping autoplay')
-        return false
+        const clicked = await this._waitForUnlockClick(12000)
+        if (!clicked) return false
       }
       if (window.Tone && Tone.start) await Tone.start()
       await app._play()
       return true
     } catch (e) { console.warn('tutorial autoplay', e); return false }
+  }
+  _waitForUnlockClick(maxMs = 12000) {
+    // Inject a "click to play" button into the current bubble and wait for
+    // the user to click it. Resolves true on click, false on timeout.
+    return new Promise(resolve => {
+      const body = this.bubble.querySelector('.tut-body')
+      if (!body) { resolve(false); return }
+      const T = (typeof t === 'function') ? t : (k => k)
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'tut-play-btn'
+      btn.textContent = T('tut-play-prompt')
+      body.appendChild(btn)
+      let done = false
+      const cleanup = (ok) => {
+        if (done) return; done = true
+        clearTimeout(timer)
+        clearInterval(poll)
+        btn.removeEventListener('click', onClick)
+        btn.remove()
+        resolve(ok)
+      }
+      const onClick = () => cleanup(true)
+      btn.addEventListener('click', onClick)
+      const timer = setTimeout(() => cleanup(false), maxMs)
+      // If the user hits Skip while the play button is showing, bail out
+      // immediately instead of stalling here for the full timeout.
+      const poll = setInterval(() => {
+        if (this._finished) cleanup(false)
+      }, 150)
+    })
   }
   _position() {
     const s = this.steps[this.idx]
@@ -233,7 +264,7 @@ class Tutorial {
     // Position arrow in the gap between bubble's nearest edge and target.
     // Computing from the bubble's ACTUAL placement (after viewport clamping)
     // prevents the arrow from landing inside the bubble's text on small screens.
-    // Arrow box = 36×36 → half = 18.
+    // Arrow box = 36x36 -> half = 18.
     const aE = this.arrow
     const half = 18
     const bRight = bL + bW, bBottom = bT + bH
@@ -241,7 +272,7 @@ class Tutorial {
     let ax, ay, rot, show = true
 
     if (s.place === 'top') {
-      // bubble above target → arrow centered in the vertical gap, pointing DOWN
+      // bubble above target -> arrow centered in the vertical gap, pointing DOWN
       const gap = r.top - bBottom
       if (gap < 24) show = false
       ay  = bBottom + (gap - 36) / 2
@@ -254,7 +285,7 @@ class Tutorial {
       ax  = bCX - half
       rot = '-90deg'
     } else if (s.place === 'left') {
-      // bubble to the left of target → arrow in horizontal gap, pointing RIGHT
+      // bubble to the left of target -> arrow in horizontal gap, pointing RIGHT
       const gap = r.left - bRight
       if (gap < 24) show = false
       ax  = bRight + (gap - 36) / 2

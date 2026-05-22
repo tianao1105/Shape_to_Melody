@@ -1387,6 +1387,32 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .tut-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(240,135,102,0.45); }
 
+/* Inline "click to play" button injected into the bubble when the browser's
+   autoplay policy has blocked audio on first visit. */
+.tut-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-h) 100%);
+  box-shadow: var(--accent-glow);
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: tutPlayPulse 1.4s ease-in-out infinite;
+}
+.tut-play-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(240,135,102,0.45); }
+@keyframes tutPlayPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(240,135,102,0.45); }
+  50%     { box-shadow: 0 0 0 8px rgba(240,135,102,0.00); }
+}
+
 .tutorial-arrow {
   position: fixed;
   z-index: 9010;
