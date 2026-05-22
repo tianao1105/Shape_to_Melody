@@ -10,32 +10,36 @@ class Tutorial {
     this._resizeH = null
     this._finished = false
     this.steps = [
-      { sel: '#canvas-container', title: '看，每一笔都是音符',
-        body: '我画一条波浪给你看 — 你画的形状会自动变成旋律。',
-        place: 'top' },
-      { sel: '#sidebar-left .panel:first-child', title: '挑笔触和颜色',
-        body: '左侧有画笔、形状、颜色。点标题还能折叠收起。',
-        place: 'right' },
-      { sel: '#mode-toggle', title: '也支持图片',
-        body: '切到「上传」可以拖入或浏览图片，自动转成线条与旋律。',
-        place: 'right' },
-      { sel: '#play-controls', title: '转换 & 播放',
-        body: '我已经帮你转换好了，正在播放你刚才画的波浪。',
-        place: 'left' },
+      { sel: '#canvas-container',                titleKey: 'tut-1-title', bodyKey: 'tut-1-body', place: 'top' },
+      { sel: '#sidebar-left .panel:first-child', titleKey: 'tut-2-title', bodyKey: 'tut-2-body', place: 'right' },
+      { sel: '#mode-toggle',                     titleKey: 'tut-3-title', bodyKey: 'tut-3-body', place: 'right' },
+      { sel: '#play-controls',                   titleKey: 'tut-4-title', bodyKey: 'tut-4-body', place: 'left' },
     ]
   }
   async start() {
     if (!this.overlay) return
     if (localStorage.getItem('s2m-tutorial-done-v4') === 'yes') return
+    this._run()
+  }
+  // Manual re-trigger (from help button) — bypasses localStorage flag
+  forceStart() {
+    if (!this.overlay) return
+    this._run()
+  }
+  _run() {
     this.overlay.classList.remove('hidden')
     document.body.classList.add('tut-locked')
     this._resizeH = () => this._position()
     window.addEventListener('resize', this._resizeH)
-    document.getElementById('tut-skip').addEventListener('click', () => this._finish())
+    const skipBtn = document.getElementById('tut-skip')
+    skipBtn.textContent = (typeof t === 'function') ? t('tut-skip-btn') : '跳过'
+    skipBtn.onclick = () => this._finish()
     const nx = document.getElementById('tut-next')
     if (nx) nx.style.display = 'none'
-    try { await this._runFlow() } catch (e) { console.error('tutorial flow', e) }
-    this._finish()
+    ;(async () => {
+      try { await this._runFlow() } catch (e) { console.error('tutorial flow', e) }
+      this._finish()
+    })()
   }
   async _runFlow() {
     this._goto(0); await this._sleep(700)
@@ -53,12 +57,13 @@ class Tutorial {
   _goto(i) { this.idx = i; this._render() }
   _render() {
     const s = this.steps[this.idx]
+    const T = (typeof t === 'function') ? t : (k => k)
     this.bubble.querySelector('.tut-step').textContent  = `${this.idx + 1} / ${this.steps.length}`
-    this.bubble.querySelector('.tut-title').textContent = s.title
-    this.bubble.querySelector('.tut-body').textContent  = s.body
+    this.bubble.querySelector('.tut-title').textContent = T(s.titleKey)
+    this.bubble.querySelector('.tut-body').textContent  = T(s.bodyKey)
     if (this._spotEl) this._spotEl.classList.remove('tut-spotlight')
-    const t = document.querySelector(s.sel)
-    if (t) { t.classList.add('tut-spotlight'); this._spotEl = t }
+    const el = document.querySelector(s.sel)
+    if (el) { el.classList.add('tut-spotlight'); this._spotEl = el }
     requestAnimationFrame(() => this._position())
   }
   async _autoDraw() {
@@ -67,11 +72,11 @@ class Tutorial {
     const { width, height } = cm.getSize()
     const N = 100, pts = []
     for (let i = 0; i <= N; i++) {
-      const t = i / N
-      const x = 80 + t * (width - 160)
+      const tt = i / N
+      const x = 80 + tt * (width - 160)
       const y = height / 2
-        + Math.sin(t * Math.PI * 3.5) * (height * 0.22)
-        + Math.cos(t * Math.PI * 1.7) * (height * 0.07)
+        + Math.sin(tt * Math.PI * 3.5) * (height * 0.22)
+        + Math.cos(tt * Math.PI * 1.7) * (height * 0.07)
       pts.push({ x, y })
     }
     const layer = cm.lm.active
@@ -109,9 +114,9 @@ class Tutorial {
   }
   _position() {
     const s = this.steps[this.idx]
-    const t = document.querySelector(s.sel)
-    if (!t) return
-    const r = t.getBoundingClientRect()
+    const target = document.querySelector(s.sel)
+    if (!target) return
+    const r = target.getBoundingClientRect()
     const vw = window.innerWidth, vh = window.innerHeight
     const bW = this.bubble.offsetWidth, bH = this.bubble.offsetHeight
     const pad = 24
@@ -124,16 +129,20 @@ class Tutorial {
     bT = Math.max(pad, Math.min(vh - bH - pad, bT))
     this.bubble.style.left = bL + 'px'
     this.bubble.style.top  = bT + 'px'
-    const a = this.arrow.style
-    if (s.place === 'right') {
-      a.left = (r.right + 6) + 'px'; a.top = (r.top + r.height/2 - 40) + 'px'; a.transform = 'scaleX(-1)'
-    } else if (s.place === 'left') {
-      a.left = (r.left - 86) + 'px'; a.top = (r.top + r.height/2 - 40) + 'px'; a.transform = 'none'
-    } else if (s.place === 'top') {
-      a.left = (r.left + r.width/2 - 40) + 'px'; a.top = (r.top - 86) + 'px'; a.transform = 'rotate(90deg)'
-    } else {
-      a.left = (r.left + r.width/2 - 40) + 'px'; a.top = (r.bottom + 6) + 'px'; a.transform = 'rotate(-90deg)'
-    }
+
+    // Position arrow as a chevron pointing TOWARD the target from the bubble side
+    const aE = this.arrow
+    aE.style.display = 'block'
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    let ax, ay, rot
+    if (s.place === 'top')    { ax = cx - 24; ay = r.top - 50;       rot = '90deg' }
+    else if (s.place === 'bottom') { ax = cx - 24; ay = r.bottom + 4; rot = '-90deg' }
+    else if (s.place === 'left')   { ax = r.left - 56; ay = cy - 24;  rot = '0deg' }
+    else /* right */               { ax = r.right + 4;  ay = cy - 24;  rot = '180deg' }
+    aE.style.left = ax + 'px'
+    aE.style.top  = ay + 'px'
+    aE.style.transform = `rotate(${rot})`
   }
   _finish() {
     if (this._finished) return

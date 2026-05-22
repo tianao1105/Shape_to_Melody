@@ -45,6 +45,13 @@ class App {
     this.player.onStop = () => {
       this.pianoRoll.stop()
       this._setStatus('')
+      // After playback ends, swap pianoroll → workspace in the Score view
+      if (this._currentView === 'pianoroll') {
+        document.getElementById('piano-roll-canvas').classList.add('hidden')
+        document.getElementById('workspace-canvas').classList.remove('hidden')
+        this._setupWorkspace()
+        this.workspace.draw()
+      }
     }
 
     this._canvasMode      = 'draw'
@@ -317,18 +324,21 @@ class App {
       if (this.convertMode === 'partial') this._togglePartialOverlay(true)
 
     } else if (view === 'pianoroll') {
-      prCanvas.classList.remove('hidden')
+      // Merged Score view:
+      //  - while NOT playing → editable workspace (drag notes around)
+      //  - while playing     → animated pianoroll scrolling
       const notes = this.layerManager.active.notes
-      if (notes.length > 0) {
-        this._setupPianoRoll(notes)
-        if (this.player.isPlaying) this.pianoRoll.start()
-        else                       this.pianoRoll.drawStatic()
+      if (this.player.isPlaying) {
+        prCanvas.classList.remove('hidden')
+        if (notes.length > 0) {
+          this._setupPianoRoll(notes)
+          this.pianoRoll.start()
+        }
+      } else {
+        wsCanvas.classList.remove('hidden')
+        this._setupWorkspace()
+        this.workspace.draw()
       }
-
-    } else if (view === 'workspace') {
-      wsCanvas.classList.remove('hidden')
-      this._setupWorkspace()
-      this.workspace.draw()
     }
   }
 
@@ -564,6 +574,9 @@ class App {
     await this.player.play(this.layerManager.layers, width)
 
     if (this._currentView === 'pianoroll') {
+      // Hand off from editable workspace → animated pianoroll
+      document.getElementById('workspace-canvas').classList.add('hidden')
+      document.getElementById('piano-roll-canvas').classList.remove('hidden')
       this._setupPianoRoll(this.layerManager.active.notes)
       this.pianoRoll.start()
     }
@@ -590,7 +603,27 @@ window.addEventListener('load', () => {
   const intro = new IntroAnimation()
   intro.onDone = () => {
     const tut = new Tutorial()
+    window.app._tutorial = tut
     setTimeout(() => tut.start(), 250)
   }
   intro.start()
+
+  // Help button — re-runs the tutorial regardless of localStorage flag
+  const help = document.getElementById('btn-help')
+  if (help) {
+    help.addEventListener('click', () => {
+      const tut = (window.app && window.app._tutorial) || new Tutorial()
+      window.app._tutorial = tut
+      tut._finished = false
+      tut.forceStart()
+    })
+  }
+
+  // Update help button tooltip when language changes
+  const langBtn = document.getElementById('lang-toggle')
+  if (langBtn && help) {
+    const refreshHelpTip = () => { help.title = (typeof t === 'function') ? t('tut-help-tip') : '重新观看教程' }
+    refreshHelpTip()
+    langBtn.addEventListener('click', () => setTimeout(refreshHelpTip, 0))
+  }
 })

@@ -24,6 +24,9 @@
         <button class="theme-dot"        data-theme="candy"  style="background:#F4B6D1" title="棉花糖"></button>
         <button class="theme-dot"        data-theme="rose"   style="background:#E83D85" title="玫红浪漫"></button>
       </div>
+      <button id="btn-help" title="重新观看教程" aria-label="tutorial">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+      </button>
       <button id="lang-toggle" onclick="toggleLang()">EN</button>
     </header>
 
@@ -245,7 +248,6 @@
         <div id="view-toggle">
           <button class="view-btn active" data-view="drawing"   data-i18n="tab-drawing">画布</button>
           <button class="view-btn"        data-view="pianoroll" data-i18n="tab-pianoroll">琴谱</button>
-          <button class="view-btn"        data-view="workspace" data-i18n="tab-workspace">工作区</button>
         </div>
       </div>
 
@@ -364,9 +366,8 @@
         <button id="tut-next"  type="button" class="tut-btn-primary">下一步</button>
       </div>
     </div>
-    <svg class="tutorial-arrow" id="tutorial-arrow" viewBox="0 0 80 80" aria-hidden="true">
-      <path d="M10 40 Q 35 10 65 35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 6"/>
-      <path d="M60 30 L 68 38 L 58 40 Z" fill="currentColor"/>
+    <svg class="tutorial-arrow" id="tutorial-arrow" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M 10 14 L 38 24 L 10 34 L 18 24 Z" fill="currentColor"/>
     </svg>
   </div>
 

@@ -126,8 +126,11 @@ function applyTheme(name) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('theme') || _themeKeys[0]
-  applyTheme(saved)
+  // Pick a fresh random theme on every page load (ignore stored preference).
+  // User can still click a swatch to switch — that will persist for the session
+  // but the next load will randomize again.
+  const random = _themeKeys[Math.floor(Math.random() * _themeKeys.length)]
+  applyTheme(random)
   document.querySelectorAll('.theme-dot').forEach(dot =>
     dot.addEventListener('click', () => applyTheme(dot.dataset.theme))
   )

@@ -107,6 +107,26 @@ header p {
   transition: transform 0.15s, color 0.15s;
 }
 
+#btn-help {
+  background: var(--surface);
+  border: none;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, color 0.15s;
+}
+#btn-help svg { width: 16px; height: 16px; }
+#btn-help:hover {
+  color: var(--accent);
+  transform: translateY(-1px) scale(1.05);
+}
+
 #lang-toggle:hover {
   transform: translateY(-1px);
   color: var(--accent);
@@ -965,24 +985,31 @@ input[type="range"]::-moz-range-thumb {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+  /* Buffer so active rings + hover scale aren't clipped by panel-body overflow */
+  padding: 4px 4px 6px;
 }
 
 .color-swatch {
   aspect-ratio: 1;
   border-radius: 50%;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: transform 0.15s cubic-bezier(.34, 1.56, .64, 1);
-  box-shadow: var(--shadow-sm), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  border: none;
+  transition: transform 0.15s cubic-bezier(.34, 1.56, .64, 1), box-shadow 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
 }
 
 .color-swatch:hover {
-  transform: scale(1.2) rotate(6deg);
+  transform: scale(1.15) rotate(4deg);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.14);
 }
 
 .color-swatch.active {
-  border-color: var(--text);
-  transform: scale(1.12);
+  transform: scale(1.05);
+  /* Single 2px accent ring — fits inside the 4px .color-row padding so it
+     never bleeds against the panel-body's overflow:hidden clip. */
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 1px 3px rgba(0, 0, 0, 0.14);
 }
 
 /* ── Select ───────────────────────────────────────────────── */
@@ -1032,21 +1059,40 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .export-row button { flex: 1; }
 
-/* ── Status bar ───────────────────────────────────────────── */
+/* ── Status bar (top-center floating toast) ──────────────── */
 #status-bar {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  z-index: 60;
   background: var(--surface);
   border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 0.76rem;
+  padding: 9px 18px;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text);
   text-align: center;
-  min-height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.10),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(.34, 1.56, .64, 1);
+  max-width: min(560px, 92vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#status-bar:not(:empty) {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
 }
 
 #status-bar.playing {
@@ -1288,12 +1334,19 @@ select:focus { outline: none; border-color: var(--accent); }
 .tutorial-arrow {
   position: fixed;
   z-index: 1010;
-  width: 80px;
-  height: 80px;
+  width: 48px;
+  height: 48px;
   color: var(--accent);
   pointer-events: none;
   transition: top 0.35s cubic-bezier(.34, 1.56, .64, 1), left 0.35s cubic-bezier(.34, 1.56, .64, 1), transform 0.3s ease;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.30));
+  animation: tutArrowBob 1.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes tutArrowBob {
+  0%,100% { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.30)); }
+  50%     { filter: drop-shadow(0 4px 10px rgba(240,135,102,0.55)); }
 }
 
 /* Spotlight ring around the active target (lifted above the dimmed backdrop) */
