@@ -61,9 +61,13 @@ class Tutorial {
     // Switch to Score view so user sees the piano-roll animation during playback
     this._switchToScore()
     await this._sleep(300)
-    await this._autoPlay()
-    // Block on actual playback finishing (poll player.isPlaying)
-    await this._waitForPlaybackEnd(20000)
+    const played = await this._autoPlay()
+    // Only wait for playback to finish if it actually started. On first page
+    // load the browser blocks audio until a user gesture, so playback may be
+    // silently skipped — in that case we just pause briefly and move on
+    // instead of stalling here forever.
+    if (played) await this._waitForPlaybackEnd(20000)
+    else        await this._sleep(1400)
     if (this._finished) return
     // Final step: highlight the Drawing view bookmark and wait for the user
     // to actually click it.
@@ -169,11 +173,25 @@ class Tutorial {
   }
   async _autoPlay() {
     const app = window.app
-    if (!app || !app._play) return
+    if (!app || !app._play) return false
+    // First-page-load trap: the browser's autoplay policy keeps the audio
+    // context suspended until the user actually clicks something. The intro
+    // animation + tutorial both run automatically, so on a fresh visit there's
+    // been zero user gesture by the time we get here. In that state
+    // `await Tone.start()` (and the one inside player._init) NEVER resolves —
+    // it sits there forever waiting for a gesture, freezing the whole flow
+    // at step 4. Detect that case up front and just skip playback so the
+    // tutorial can still walk the user to step 5.
     try {
+      const ctx = (window.Tone && Tone.context) ? Tone.context : null
+      if (ctx && ctx.state !== 'running') {
+        console.warn('tutorial: audio context not running, skipping autoplay')
+        return false
+      }
       if (window.Tone && Tone.start) await Tone.start()
       await app._play()
-    } catch (e) { console.warn('tutorial autoplay', e) }
+      return true
+    } catch (e) { console.warn('tutorial autoplay', e); return false }
   }
   _position() {
     const s = this.steps[this.idx]
