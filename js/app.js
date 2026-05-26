@@ -56,7 +56,6 @@ class App {
 
     this._canvasMode      = 'draw'
     this._imageImporter   = null
-    this._pendingImage    = null
 
     this._renderLayerTabs()
     this._bindUI()
@@ -368,8 +367,6 @@ class App {
       dropzone.classList.add('hidden')
       container.classList.remove('upload-mode')
       if (hint) hint.style.opacity = ''
-      // Drop any pending preview when leaving upload mode.
-      if (this._pendingImage) this._cancelImagePreview()
     }
   }
 
@@ -424,107 +421,37 @@ class App {
     }
     this._setStatus(t('status-loading'), '')
     try {
-      const img = await this._imageImporter.loadImageOnly(file)
-      this._pendingImage     = img
-      this._pendingImageName = file.name || ''
-      this._showImagePreview(img, file)
-      this._setStatus(t('status-image-ready'), '')
-    } catch (err) {
-      console.error('Image load failed:', err)
-      this._setStatus(t('status-noimport'), 'error')
-    }
-  }
-
-  _showImagePreview(img, file) {
-    // Lazy-build the overlay once and reuse it.
-    let overlay = document.getElementById('image-preview-overlay')
-    if (!overlay) {
-      overlay = document.createElement('div')
-      overlay.id = 'image-preview-overlay'
-      overlay.innerHTML = `
-        <div class="ip-card">
-          <div class="ip-header">
-            <span class="ip-title" data-i18n="preview-title">${t('preview-title')}</span>
-            <span class="ip-filename"></span>
-          </div>
-          <div class="ip-thumb-wrap">
-            <img class="ip-thumb" alt="preview">
-          </div>
-          <div class="ip-actions">
-            <button class="ip-btn ip-btn-ghost" data-action="cancel">
-              <span data-i18n="btn-image-cancel">${t('btn-image-cancel')}</span>
-            </button>
-            <button class="ip-btn ip-btn-ghost" data-action="replace">
-              <span data-i18n="btn-image-replace">${t('btn-image-replace')}</span>
-            </button>
-            <button class="ip-btn ip-btn-primary" data-action="convert">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,4 20,12 6,20" fill="currentColor" stroke="none"/></svg>
-              <span data-i18n="btn-image-convert">${t('btn-image-convert')}</span>
-            </button>
-          </div>
-        </div>
-      `
-      const container = document.getElementById('canvas-container')
-      if (container) container.appendChild(overlay)
-      else document.body.appendChild(overlay)
-
-      overlay.addEventListener('click', e => {
-        const btn = e.target.closest('[data-action]')
-        if (!btn) return
-        const act = btn.dataset.action
-        if      (act === 'cancel')  this._cancelImagePreview()
-        else if (act === 'replace') this._replaceImagePreview()
-        else if (act === 'convert') this._confirmImageConvert()
-      })
-    }
-
-    const thumb = overlay.querySelector('.ip-thumb')
-    if (thumb) thumb.src = img.src
-    const fn = overlay.querySelector('.ip-filename')
-    if (fn) fn.textContent = (file && file.name) ? file.name : ''
-    overlay.classList.add('visible')
-  }
-
-  _hideImagePreview() {
-    const overlay = document.getElementById('image-preview-overlay')
-    if (overlay) overlay.classList.remove('visible')
-  }
-
-  _cancelImagePreview() {
-    this._pendingImage = null
-    this._hideImagePreview()
-    this._setStatus('', '')
-  }
-
-  _replaceImagePreview() {
-    // Reopen the file picker; if the user picks one it overwrites the preview.
-    const input = document.getElementById('image-input')
-    if (input) input.click()
-  }
-
-  async _confirmImageConvert() {
-    const img = this._pendingImage
-    if (!img) return
-    if (!this._imageImporter) {
-      this._imageImporter = new ImageImporter(this.canvas, this.layerManager)
-    }
-    this._hideImagePreview()
-    this._setStatus(t('status-loading'), '')
-    try {
-      const result = this._imageImporter.importImage(img)
-      this._pendingImage = null
+      const result = await this._imageImporter.loadFile(file)
       if (result.strokes > 0) {
+        // Image is now strokes on the canvas. Tell the user to tweak settings
+        // and click the right-side Convert button to generate notes.
         this._setStatus(t('status-imported', { n: result.strokes }), '')
         const drawTab = document.querySelector('.mode-tab[data-canvas-mode="draw"]')
         if (drawTab) drawTab.click()
+        this._pulseConvertButton()
       } else {
         this._setStatus(t('status-noimport'), 'error')
       }
       this._refreshUndoRedo()
     } catch (err) {
-      console.error('Image convert failed:', err)
+      console.error('Image import failed:', err)
       this._setStatus(t('status-noimport'), 'error')
     }
+  }
+
+  _pulseConvertButton() {
+    const btn = document.getElementById('btn-convert')
+    if (!btn) return
+    btn.classList.remove('attention-pulse')
+    // Force reflow so re-adding the class restarts the animation
+    void btn.offsetWidth
+    btn.classList.add('attention-pulse')
+    clearTimeout(this._pulseTimer)
+    this._pulseTimer = setTimeout(() => btn.classList.remove('attention-pulse'), 6500)
+    btn.addEventListener('click', () => {
+      btn.classList.remove('attention-pulse')
+      clearTimeout(this._pulseTimer)
+    }, { once: true })
   }
 
   /* ── Panel collapse ──────────────────────────────────────── */

@@ -30,11 +30,38 @@ class Converter {
   convert(strokes, canvasHeight, mode, options = {}) {
     this._h = canvasHeight
     if (!strokes || strokes.length === 0) return []
+    let notes
     switch (mode) {
-      case 'partial': return this._partialConvert(strokes, options)
-      case 'random':  return this._randomConvert(strokes, options)
-      default:        return this._fullConvert(strokes, options)
+      case 'partial': notes = this._partialConvert(strokes, options); break
+      case 'random':  notes = this._randomConvert(strokes, options); break
+      default:        notes = this._fullConvert(strokes, options); break
     }
+    // Random mode picks a fixed count, so don't post-thin it.
+    if (mode === 'random') return notes
+    // Post-thin: grid-bucket notes into cells of size `interval` and keep
+    // only the first note per cell (in draw order). Hand-drawn strokes are
+    // already spaced ≈ interval by arc-length sampling, so each cell is
+    // naturally ≤ 1 note — thinning is a no-op. Image-imported strokes
+    // are made of hundreds of tiny segments and need this pass for the
+    // sampling interval to actually reduce note density.
+    const interval = options.interval ?? 5
+    return this._thinByGrid(notes, interval)
+  }
+
+  _thinByGrid(notes, cellSize) {
+    if (notes.length < 2 || cellSize < 2) return notes
+    const seen = new Set()
+    const out  = []
+    for (const n of notes) {
+      const cx  = Math.floor(n.x / cellSize)
+      const cy  = Math.floor(n.y / cellSize)
+      const key = cx + ',' + cy
+      if (!seen.has(key)) {
+        seen.add(key)
+        out.push(n)
+      }
+    }
+    return out
   }
 
   _fullConvert(strokes, { interval = 5 } = {}) {
