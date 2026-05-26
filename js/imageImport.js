@@ -16,12 +16,19 @@ class ImageImporter {
   }
 
   async loadFile(file) {
+    const img = await this.loadImageOnly(file)
+    return this.importImage(img)
+  }
+
+  /* Load + decode the file into an Image object but DO NOT touch the
+     canvas or layer state. Caller decides when to actually call
+     importImage(img) — typically after the user confirms in a preview. */
+  async loadImageOnly(file) {
     if (!file || !file.type || !file.type.startsWith('image/')) {
       throw new Error('not-image')
     }
     const dataUrl = await this._fileToDataUrl(file)
-    const img     = await this._loadImage(dataUrl)
-    return this.importImage(img)
+    return this._loadImage(dataUrl)
   }
 
   _fileToDataUrl(file) {
