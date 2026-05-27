@@ -5,11 +5,11 @@ class Workspace {
     this.pianoW   = 90
     this.rowH     = 0
     this.layers   = []
-    this.allNotes = []   // high → low
+    this.allNotes = []
     this.canvasW  = 1
-    this._sel     = null  // {layerIdx, noteIdx}
+    this._sel     = null
     this._drag    = null
-    this.onChange = null  // called after note edit
+    this.onChange = null
   }
 
   init(canvasEl) {
@@ -20,7 +20,7 @@ class Workspace {
 
   setup(layers, scaleNotes, canvasW) {
     this.layers   = layers
-    this.allNotes = [...scaleNotes].reverse()   // high → low for display
+    this.allNotes = [...scaleNotes].reverse()
     this.canvasW  = canvasW
     this.rowH     = this.canvas.height / this.allNotes.length
     this._sel     = null
@@ -55,8 +55,10 @@ class Workspace {
       }
     })
 
-    // Notes per layer
+    // Notes per layer — colors derive from the current theme so blocks
+    // follow the palette. Multi-layer cases get distinct shades.
     this.layers.forEach((layer, li) => {
+      const blockColor = this._blockColor(li, c, layer)
       layer.notes.forEach((evt, ni) => {
         const ri = this.allNotes.indexOf(evt.note)
         if (ri === -1) return
@@ -64,24 +66,25 @@ class Workspace {
         const ny     = ri * rh
         const isSel  = this._sel?.layerIdx === li && this._sel?.noteIdx === ni
 
-        ctx.globalAlpha = isSel ? 1 : 0.82
-        ctx.fillStyle   = layer.color
+        ctx.globalAlpha = isSel ? 1 : 0.85
+        ctx.fillStyle   = blockColor
         _rr(ctx, nx - noteW / 2, ny + 1, noteW, rh - 2, 3)
         ctx.fill()
 
         if (isSel) {
-          ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5
+          ctx.strokeStyle = c.text
+          ctx.lineWidth   = 1.5
           ctx.stroke()
         }
         ctx.globalAlpha = 1
       })
     })
 
-    // Layer legend (top-right)
+    // Layer legend (top-right) — matches block colors
     if (this.layers.length > 1) {
       this.layers.forEach((layer, li) => {
         const lx = W - 8 - (this.layers.length - li) * 38
-        ctx.fillStyle = layer.color
+        ctx.fillStyle = this._blockColor(li, c, layer)
         ctx.fillRect(lx, 5, 10, 10)
         ctx.fillStyle    = c.textMuted
         ctx.font         = '10px monospace'
@@ -100,26 +103,27 @@ class Workspace {
       ctx.fillText('先转换图层，再来这里编辑', pw + rollW / 2, H / 2)
     }
 
-    this._drawPianoKeys()
+    this._drawPianoKeys(c)
 
     // Separator
     ctx.strokeStyle = c.border; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(pw, 0); ctx.lineTo(pw, H); ctx.stroke()
   }
 
-  _drawPianoKeys() {
-    const ctx  = this.ctx
-    const pw   = this.pianoW
-    const rh   = this.rowH
-    const H    = this.canvas.height
-    const bkW  = pw * 0.62
+  _drawPianoKeys(c) {
+    const ctx   = this.ctx
+    const pw    = this.pianoW
+    const rh    = this.rowH
+    const H     = this.canvas.height
+    const bkW   = pw * 0.62
     const bkPad = Math.max(0.5, rh * 0.07)
+    const p     = _keyPalette(c)
 
-    ctx.fillStyle = '#f5f0e6'
+    ctx.fillStyle = p.whiteKey
     ctx.fillRect(0, 0, pw, H)
 
     this.allNotes.forEach((_, idx) => {
-      ctx.strokeStyle = '#c9bfab'; ctx.lineWidth = 0.5
+      ctx.strokeStyle = p.whiteKeyEdge; ctx.lineWidth = 0.5
       ctx.beginPath(); ctx.moveTo(0, idx * rh + rh); ctx.lineTo(pw, idx * rh + rh); ctx.stroke()
     })
 
@@ -127,26 +131,33 @@ class Workspace {
       if (!note.includes('#')) return
       const y    = idx * rh
       const grad = ctx.createLinearGradient(0, y, bkW, y)
-      grad.addColorStop(0, '#1c1c1c'); grad.addColorStop(1, '#484848')
+      grad.addColorStop(0,   p.blackKeyTop)
+      grad.addColorStop(0.6, p.blackKeyMid)
+      grad.addColorStop(1,   p.blackKeyBottom)
       ctx.fillStyle = grad
       _rr(ctx, 0, y + bkPad, bkW, rh - bkPad * 2, 2)
+      ctx.fill()
+
+      ctx.fillStyle = p.blackKeyHighlight
+      _rr(ctx, 2, y + bkPad + 1, bkW - 4, (rh - bkPad * 2) * 0.28, 1)
       ctx.fill()
     })
 
     if (rh >= 9) {
       this.allNotes.forEach((note, idx) => {
         const isBlk = note.includes('#')
-        if (!(!isBlk && note[0] === 'C') && rh < 13) return
-        ctx.fillStyle    = isBlk ? 'rgba(255,255,255,0.55)' : '#8a7c68'
+        const isC   = !isBlk && note[0] === 'C'
+        if (!isC && rh < 13) return
+        ctx.fillStyle    = isBlk ? p.blackKeyLabel : p.whiteKeyLabel
+        ctx.globalAlpha  = isBlk ? 0.75 : 1
         ctx.font         = `${Math.min(10, Math.floor(rh * 0.60))}px monospace`
         ctx.textAlign    = 'right'
         ctx.textBaseline = 'middle'
         ctx.fillText(note, pw - 4, idx * rh + rh / 2)
+        ctx.globalAlpha  = 1
       })
     }
   }
-
-  /* ── Interaction ──────────────────────────────────────────── */
 
   _pos(e) {
     const r = this.canvas.getBoundingClientRect()
@@ -228,8 +239,23 @@ class Workspace {
     const s = getComputedStyle(document.documentElement)
     const g = p => s.getPropertyValue(p).trim()
     return {
-      bg: g('--bg'), surface: g('--surface'), border: g('--border'),
-      accent: g('--accent'), text: g('--text'), textMuted: g('--text-muted'),
+      bg:        g('--bg'),
+      surface:   g('--surface'),
+      surface2:  g('--surface2'),
+      border:    g('--border'),
+      accent:    g('--accent'),
+      accentH:   g('--accent-h'),
+      text:      g('--text'),
+      textMuted: g('--text-muted'),
     }
+  }
+
+  /* Theme-aware block color per layer index. Layer 0 = accent, layer 1
+     = accent-h; layer 2+ falls back to LAYER_COLORS so multi-layer
+     projects still get visual differentiation. */
+  _blockColor(li, c, layer) {
+    if (li === 0) return c.accent
+    if (li === 1) return c.accentH
+    return (layer && layer.color) ? layer.color : c.accent
   }
 }

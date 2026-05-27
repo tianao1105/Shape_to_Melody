@@ -10,18 +10,81 @@ function _rr(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
+/* ─── Theme-aware piano key palette ──────────────────────────── */
+
+function _hexToRgb(hex) {
+  const m = (hex || '').replace('#', '').trim()
+  if (m.length === 3) {
+    return {
+      r: parseInt(m[0] + m[0], 16),
+      g: parseInt(m[1] + m[1], 16),
+      b: parseInt(m[2] + m[2], 16),
+    }
+  }
+  if (m.length === 6) {
+    return {
+      r: parseInt(m.substr(0, 2), 16),
+      g: parseInt(m.substr(2, 2), 16),
+      b: parseInt(m.substr(4, 2), 16),
+    }
+  }
+  return { r: 128, g: 128, b: 128 }
+}
+
+function _luminance(hex) {
+  const { r, g, b } = _hexToRgb(hex)
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+}
+
+function _mixHex(a, b, t) {
+  const A = _hexToRgb(a)
+  const B = _hexToRgb(b)
+  const r = Math.round(A.r * (1 - t) + B.r * t)
+  const g = Math.round(A.g * (1 - t) + B.g * t)
+  const bl = Math.round(A.b * (1 - t) + B.b * t)
+  return `rgb(${r}, ${g}, ${bl})`
+}
+
+function _keyPalette(c) {
+  const isDark = _luminance(c.bg) < 0.5
+  if (isDark) {
+    return {
+      isDark,
+      whiteKey:          _mixHex(c.text, c.surface2, 0.10),
+      whiteKeyEdge:      c.surface,
+      whiteKeyLabel:     c.surface,
+      blackKeyTop:       c.bg,
+      blackKeyMid:       _mixHex(c.bg, c.surface, 0.55),
+      blackKeyBottom:    _mixHex(c.bg, c.surface, 0.95),
+      blackKeyHighlight: 'rgba(255, 255, 255, 0.10)',
+      blackKeyLabel:     c.text,
+    }
+  }
+  return {
+    isDark,
+    whiteKey:          _mixHex(c.surface, '#ffffff', 0.45),
+    whiteKeyEdge:      c.border,
+    whiteKeyLabel:     c.textMuted,
+    blackKeyTop:       c.text,
+    blackKeyMid:       _mixHex(c.text, c.textMuted, 0.3),
+    blackKeyBottom:    _mixHex(c.text, c.textMuted, 0.55),
+    blackKeyHighlight: 'rgba(255, 255, 255, 0.14)',
+    blackKeyLabel:     '#ffffff',
+  }
+}
+
 class PianoRoll {
   constructor() {
     this.canvas      = null
     this.ctx         = null
-    this.noteEvents  = []   // [{note, x, y}, ...]
-    this.allNotes    = []   // full scale, high → low
+    this.noteEvents  = []
+    this.allNotes    = []
     this.bpm         = 120
     this.canvasW     = 1
     this.canvasH     = 1
     this.pianoW      = 90
     this.rowH        = 0
-    this.totalTime   = 0    // seconds, provided by player
+    this.totalTime   = 0
     this._animId     = null
     this._running    = false
     this._active     = new Set()
@@ -32,12 +95,9 @@ class PianoRoll {
     this.ctx    = canvasEl.getContext('2d')
   }
 
-  // noteEvents: [{note, x, y}]
-  // allNotes:   converter.notes (low → high), will be reversed here
-  // totalTime:  player.getTotalTime() — sync scroll speed to audio
   setup(noteEvents, allNotes, bpm, canvasW, canvasH, totalTime) {
     this.noteEvents = noteEvents
-    this.allNotes   = allNotes.slice().reverse()   // high → low for display
+    this.allNotes   = allNotes.slice().reverse()
     this.bpm        = bpm
     this.canvasW    = canvasW
     this.canvasH    = canvasH
@@ -60,8 +120,6 @@ class PianoRoll {
   drawStatic() {
     if (this.noteEvents.length) this._drawFrame(0, false)
   }
-
-  /* ── private ──────────────────────────────────────────────── */
 
   _tc() {
     const s = getComputedStyle(document.documentElement)
@@ -112,24 +170,24 @@ class PianoRoll {
       }
     })
 
-    // note dots
-    const dotR = Math.max(2, Math.min(this.rowH / 2 - 1, 5))
+    // note blocks (slightly smaller than workspace's editable blocks)
+    const bw = Math.max(4, Math.min(this.rowH * 0.55, 9))
+    const bh = Math.max(3, this.rowH * 0.55)
 
     this.noteEvents.forEach(evt => {
       const noteIdx = this.allNotes.indexOf(evt.note)
       if (noteIdx === -1) return
 
-      const baseX   = pw + (evt.x / this.canvasW) * rollW
-      const nx      = baseX - scrollX
-      if (nx < pw - dotR * 2 || nx > W + dotR) return
+      const baseX = pw + (evt.x / this.canvasW) * rollW
+      const nx    = baseX - scrollX
+      if (nx < pw - bw || nx > W + bw) return
 
       const ny      = noteIdx * this.rowH + this.rowH / 2
-      const atPiano = nx <= pw + dotR && nx >= pw - dotR * 3
+      const atPiano = nx <= pw + bw / 2 && nx >= pw - bw * 1.5
       if (atPiano) this._active.add(evt.note)
 
       ctx.fillStyle = atPiano ? c.accentH : c.accent
-      ctx.beginPath()
-      ctx.arc(nx, ny, dotR, 0, Math.PI * 2)
+      _rr(ctx, nx - bw / 2, ny - bh / 2, bw, bh, Math.min(2, bw / 3))
       ctx.fill()
     })
 
@@ -137,24 +195,27 @@ class PianoRoll {
     this._drawKeys(c)
 
     // playhead
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+    ctx.strokeStyle = c.border
+    ctx.globalAlpha = 0.4
     ctx.lineWidth   = 1.5
     ctx.beginPath(); ctx.moveTo(pw, 0); ctx.lineTo(pw, H); ctx.stroke()
+    ctx.globalAlpha = 1
   }
 
   _drawKeys(c) {
-    const ctx  = this.ctx
-    const pw   = this.pianoW
-    const rh   = this.rowH
-    const H    = this.canvas.height
-    const bkW  = pw * 0.62          // black key width
+    const ctx   = this.ctx
+    const pw    = this.pianoW
+    const rh    = this.rowH
+    const H     = this.canvas.height
+    const bkW   = pw * 0.62
     const bkPad = Math.max(0.5, rh * 0.07)
+    const p     = _keyPalette(c)
 
     // White key base
-    ctx.fillStyle = '#f5f0e6'
+    ctx.fillStyle = p.whiteKey
     ctx.fillRect(0, 0, pw, H)
 
-    // White key separators and active highlights
+    // White key separators + active highlights
     this.allNotes.forEach((note, idx) => {
       const y      = idx * rh
       const isBlk  = note.includes('#')
@@ -165,36 +226,33 @@ class PianoRoll {
         ctx.fillStyle = c.accent + '44'
         ctx.fillRect(0, y, pw, rh)
       }
-      // Bottom edge line between white keys
-      ctx.strokeStyle = '#c9bfab'
+      ctx.strokeStyle = p.whiteKeyEdge
       ctx.lineWidth   = 0.5
       ctx.beginPath(); ctx.moveTo(0, y + rh); ctx.lineTo(pw, y + rh); ctx.stroke()
     })
 
-    // Black keys (drawn on top of white key base)
+    // Black keys
     this.allNotes.forEach((note, idx) => {
       const y      = idx * rh
       const isBlk  = note.includes('#')
       if (!isBlk) return
       const active = this._active.has(note)
 
-      // Body gradient
       const grad = ctx.createLinearGradient(0, y, bkW, y)
       if (active) {
-        grad.addColorStop(0,   '#555')
-        grad.addColorStop(1,   '#888')
+        grad.addColorStop(0, c.accent)
+        grad.addColorStop(1, c.accentH)
       } else {
-        grad.addColorStop(0,   '#1c1c1c')
-        grad.addColorStop(0.6, '#2d2d2d')
-        grad.addColorStop(1,   '#484848')
+        grad.addColorStop(0,   p.blackKeyTop)
+        grad.addColorStop(0.6, p.blackKeyMid)
+        grad.addColorStop(1,   p.blackKeyBottom)
       }
       ctx.fillStyle = grad
       _rr(ctx, 0, y + bkPad, bkW, rh - bkPad * 2, 2)
       ctx.fill()
 
-      // Top highlight strip
       if (!active) {
-        ctx.fillStyle = 'rgba(255,255,255,0.14)'
+        ctx.fillStyle = p.blackKeyHighlight
         _rr(ctx, 2, y + bkPad + 1, bkW - 4, (rh - bkPad * 2) * 0.28, 1)
         ctx.fill()
       }
@@ -210,12 +268,14 @@ class PianoRoll {
         if (!isC && rh < 13) return
 
         ctx.fillStyle    = isBlk
-          ? (active ? '#fff' : 'rgba(255,255,255,0.55)')
-          : (active ? c.accent : '#8a7c68')
+          ? (active ? '#ffffff' : p.blackKeyLabel)
+          : (active ? c.accent  : p.whiteKeyLabel)
+        ctx.globalAlpha  = active ? 1 : (isBlk ? 0.75 : 1)
         ctx.font         = `${Math.min(10, Math.floor(rh * 0.60))}px monospace`
         ctx.textAlign    = 'right'
         ctx.textBaseline = 'middle'
         ctx.fillText(note, pw - 4, y + rh / 2)
+        ctx.globalAlpha  = 1
       })
     }
 

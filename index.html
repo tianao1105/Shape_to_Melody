@@ -14,16 +14,15 @@
     <header>
       <h1>Shape to Melody</h1>
       <p data-i18n="subtitle">画出形状，听见旋律</p>
-      <div id="theme-picker">
-        <button class="theme-dot active" data-theme="mint"   style="background:#F08766" title="薄荷珊瑚"></button>
-        <button class="theme-dot"        data-theme="pop"    style="background:#EE34D8" title="荧光玫红"></button>
-        <button class="theme-dot"        data-theme="forest" style="background:#F49A2C" title="森林橙绿"></button>
-        <button class="theme-dot"        data-theme="peach"  style="background:#F58F7D" title="桃色渐变"></button>
-        <button class="theme-dot"        data-theme="sage"   style="background:#D49497" title="鼠尾草脏粉"></button>
-        <button class="theme-dot"        data-theme="earth"  style="background:#D89A5B" title="大地咖啡"></button>
-        <button class="theme-dot"        data-theme="candy"  style="background:#F4B6D1" title="棉花糖"></button>
-        <button class="theme-dot"        data-theme="rose"   style="background:#E83D85" title="玫红浪漫"></button>
+      <div id="mode-toggle-group" role="group" aria-label="theme mode">
+        <button class="mode-toggle-btn active" data-mode="light" type="button" title="浅色模式" aria-label="light mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>
+        </button>
+        <button class="mode-toggle-btn" data-mode="dark" type="button" title="深色模式" aria-label="dark mode">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.5 13.5A8.5 8.5 0 0 1 10.5 3.5a8.5 8.5 0 1 0 10 10z"/></svg>
+        </button>
       </div>
+      <div id="theme-picker"><!-- dots rendered by theme.js --></div>
       <button id="btn-help" title="重新观看教程" aria-label="tutorial">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
       </button>

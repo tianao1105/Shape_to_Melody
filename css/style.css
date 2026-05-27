@@ -72,11 +72,46 @@ header p {
   display: flex;
   gap: 7px;
   align-items: center;
-  margin-left: auto;
   background: var(--surface);
   padding: 6px 10px;
   border-radius: 999px;
   box-shadow: var(--shadow-sm);
+}
+
+#mode-toggle-group {
+  display: inline-flex;
+  margin-left: auto;
+  margin-right: 8px;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow-sm);
+  gap: 2px;
+}
+
+.mode-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.mode-toggle-btn svg { width: 16px; height: 16px; }
+.mode-toggle-btn:hover {
+  color: var(--accent);
+  transform: scale(1.08);
+}
+.mode-toggle-btn.active {
+  background: var(--bg);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .theme-dot {

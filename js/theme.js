@@ -1,6 +1,7 @@
 const THEMES = {
+  // ───────── Light mode ─────────
   mint: {
-    label: '薄荷珊瑚', swatch: '#F08766',
+    mode: 'light', label: '薄荷珊瑚', swatch: '#F08766',
     vars: {
       '--bg':         '#FAF1DD',
       '--surface':    '#E8F7F6',
@@ -14,7 +15,7 @@ const THEMES = {
     }
   },
   pop: {
-    label: '荧光玫红', swatch: '#EE34D8',
+    mode: 'light', label: '荧光玫红', swatch: '#EE34D8',
     vars: {
       '--bg':         '#FCF1A3',
       '--surface':    '#FDEFC0',
@@ -28,7 +29,7 @@ const THEMES = {
     }
   },
   forest: {
-    label: '森林橙绿', swatch: '#F49A2C',
+    mode: 'light', label: '森林橙绿', swatch: '#F49A2C',
     vars: {
       '--bg':         '#1A3310',
       '--surface':    '#2A4E1C',
@@ -42,7 +43,7 @@ const THEMES = {
     }
   },
   peach: {
-    label: '桃色渐变', swatch: '#F58F7D',
+    mode: 'light', label: '桃色渐变', swatch: '#F58F7D',
     vars: {
       '--bg':         '#FEF0DC',
       '--surface':    '#FDDCC0',
@@ -56,7 +57,7 @@ const THEMES = {
     }
   },
   sage: {
-    label: '鼠尾草脏粉', swatch: '#D49497',
+    mode: 'light', label: '鼠尾草脏粉', swatch: '#D49497',
     vars: {
       '--bg':         '#F5EFE5',
       '--surface':    '#E5EDE6',
@@ -70,7 +71,7 @@ const THEMES = {
     }
   },
   earth: {
-    label: '大地咖啡', swatch: '#D89A5B',
+    mode: 'light', label: '大地咖啡', swatch: '#D89A5B',
     vars: {
       '--bg':         '#F5EDD5',
       '--surface':    '#E8D9AC',
@@ -84,7 +85,7 @@ const THEMES = {
     }
   },
   candy: {
-    label: '棉花糖', swatch: '#F4B6D1',
+    mode: 'light', label: '棉花糖', swatch: '#F4B6D1',
     vars: {
       '--bg':         '#F7F6CC',
       '--surface':    '#EAF5EC',
@@ -98,7 +99,7 @@ const THEMES = {
     }
   },
   rose: {
-    label: '玫红浪漫', swatch: '#E83D85',
+    mode: 'light', label: '玫红浪漫', swatch: '#E83D85',
     vars: {
       '--bg':         '#FEF4F5',
       '--surface':    '#FBDDE4',
@@ -110,28 +111,203 @@ const THEMES = {
       '--text-muted': '#682050',
       '--danger':     '#C01840'
     }
+  },
+
+  // ───────── Dark mode ─────────
+  noir: {
+    mode: 'dark', label: '咖啡奶油', swatch: '#E5DCC7',
+    vars: {
+      '--bg':         '#08060A',
+      '--surface':    '#1F1408',
+      '--surface2':   '#3D2814',
+      '--border':     '#5A4028',
+      '--accent':     '#E5DCC7',
+      '--accent-h':   '#C2B89E',
+      '--text':       '#E5DCC7',
+      '--text-muted': '#A89B82',
+      '--danger':     '#E06040'
+    }
+  },
+  ocean: {
+    mode: 'dark', label: '海洋蓝绿', swatch: '#3FB0A1',
+    vars: {
+      '--bg':         '#0F1148',
+      '--surface':    '#2D3786',
+      '--surface2':   '#345D82',
+      '--border':     '#4A7BA8',
+      '--accent':     '#3FB0A1',
+      '--accent-h':   '#2E8C7F',
+      '--text':       '#DAEEEB',
+      '--text-muted': '#8AB5B0',
+      '--danger':     '#FF6060'
+    }
+  },
+  mauve: {
+    mode: 'dark', label: '雾灰玫瑰', swatch: '#D6AB9C',
+    vars: {
+      '--bg':         '#1E2533',
+      '--surface':    '#3A2E26',
+      '--surface2':   '#7A695E',
+      '--border':     '#5E5048',
+      '--accent':     '#D6AB9C',
+      '--accent-h':   '#B98876',
+      '--text':       '#EAD8CE',
+      '--text-muted': '#B89A8E',
+      '--danger':     '#E06080'
+    }
+  },
+  electric: {
+    mode: 'dark', label: '电光蓝', swatch: '#2A2BEC',
+    vars: {
+      '--bg':         '#08081C',
+      '--surface':    '#0A1058',
+      '--surface2':   '#1B25A8',
+      '--border':     '#353EC0',
+      '--accent':     '#2A2BEC',
+      '--accent-h':   '#1819C0',
+      '--text':       '#E5E5FF',
+      '--text-muted': '#9090C8',
+      '--danger':     '#FF4040'
+    }
+  },
+  jade: {
+    mode: 'dark', label: '森林薄荷', swatch: '#BFEAD8',
+    vars: {
+      '--bg':         '#0C1814',
+      '--surface':    '#1F4438',
+      '--surface2':   '#43887A',
+      '--border':     '#5A9C8E',
+      '--accent':     '#BFEAD8',
+      '--accent-h':   '#95D8B8',
+      '--text':       '#BFEAD8',
+      '--text-muted': '#7AA89A',
+      '--danger':     '#E05050'
+    }
+  },
+  moss: {
+    mode: 'dark', label: '苔绿米色', swatch: '#86AD61',
+    vars: {
+      '--bg':         '#1B211A',
+      '--surface':    '#577939',
+      '--surface2':   '#86AD61',
+      '--border':     '#6B935A',
+      '--accent':     '#E9D9A8',
+      '--accent-h':   '#C9B988',
+      '--text':       '#E9D9A8',
+      '--text-muted': '#A5B895',
+      '--danger':     '#D04540'
+    }
+  },
+  harbor: {
+    mode: 'dark', label: '钢蓝雾色', swatch: '#3D6580',
+    vars: {
+      '--bg':         '#1F3A4F',
+      '--surface':    '#234A65',
+      '--surface2':   '#3D6580',
+      '--border':     '#4F7C95',
+      '--accent':     '#C9BCAE',
+      '--accent-h':   '#A89C8E',
+      '--text':       '#DDE6EC',
+      '--text-muted': '#95A8B5',
+      '--danger':     '#D04540'
+    }
+  },
+  crimson: {
+    mode: 'dark', label: '深红海军', swatch: '#ED1F1F',
+    vars: {
+      '--bg':         '#241110',
+      '--surface':    '#5C2025',
+      '--surface2':   '#872E32',
+      '--border':     '#4A1820',
+      '--accent':     '#ED1F1F',
+      '--accent-h':   '#C01818',
+      '--text':       '#F0DCDC',
+      '--text-muted': '#C08A8A',
+      '--danger':     '#ED1F1F'
+    }
   }
 }
 
-const _themeKeys = Object.keys(THEMES)
+function _keysOfMode(mode) {
+  return Object.keys(THEMES).filter(k => THEMES[k].mode === mode)
+}
+
+let _currentMode  = 'light'
+let _currentTheme = 'mint'
 
 function applyTheme(name) {
-  const theme = THEMES[name] || THEMES[_themeKeys[0]]
-  const root  = document.documentElement
+  const theme = THEMES[name]
+  if (!theme) return
+  const root = document.documentElement
   for (const [k, v] of Object.entries(theme.vars)) root.style.setProperty(k, v)
+  _currentTheme = name
+  _currentMode  = theme.mode
+  localStorage.setItem('theme',              name)
+  localStorage.setItem('theme-mode',         theme.mode)
+  localStorage.setItem('theme-last-' + theme.mode, name)
+  document.documentElement.dataset.themeMode = theme.mode
   document.querySelectorAll('.theme-dot').forEach(d =>
     d.classList.toggle('active', d.dataset.theme === name)
   )
-  localStorage.setItem('theme', name)
+  document.querySelectorAll('.mode-toggle-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === theme.mode)
+  )
+  // Notify canvas-rendered views (pianoroll / workspace) so they can
+  // redraw with the new palette — CSS variables don't auto-update
+  // pixels already painted to a <canvas>.
+  window.dispatchEvent(new CustomEvent('themechange', {
+    detail: { theme: name, mode: theme.mode }
+  }))
+}
+
+function renderThemePicker() {
+  const picker = document.getElementById('theme-picker')
+  if (!picker) return
+  // Remove any existing dots; keep non-dot children (e.g. inserted toggle buttons)
+  picker.querySelectorAll('.theme-dot').forEach(n => n.remove())
+  for (const name of _keysOfMode(_currentMode)) {
+    const t = THEMES[name]
+    const dot = document.createElement('button')
+    dot.type             = 'button'
+    dot.className        = 'theme-dot' + (name === _currentTheme ? ' active' : '')
+    dot.dataset.theme    = name
+    dot.style.background = t.swatch
+    dot.title            = t.label
+    dot.addEventListener('click', () => applyTheme(name))
+    picker.appendChild(dot)
+  }
+}
+
+function setThemeMode(mode) {
+  if (mode !== 'light' && mode !== 'dark') return
+  _currentMode = mode
+  localStorage.setItem('theme-mode', mode)
+  const keys = _keysOfMode(mode)
+  // Prefer the user's last-used theme in this mode; otherwise a random one.
+  let chosen = localStorage.getItem('theme-last-' + mode)
+  if (!chosen || !THEMES[chosen] || THEMES[chosen].mode !== mode) {
+    chosen = keys[Math.floor(Math.random() * keys.length)]
+  }
+  renderThemePicker()
+  applyTheme(chosen)
+}
+
+function _initialMode() {
+  const stored = localStorage.getItem('theme-mode')
+  if (stored === 'light' || stored === 'dark') return stored
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+  return 'light'
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Pick a fresh random theme on every page load (ignore stored preference).
-  // User can still click a swatch to switch — that will persist for the session
-  // but the next load will randomize again.
-  const random = _themeKeys[Math.floor(Math.random() * _themeKeys.length)]
+  _currentMode = _initialMode()
+  // Pick a fresh random theme inside the current mode on every page load.
+  const keys   = _keysOfMode(_currentMode)
+  const random = keys[Math.floor(Math.random() * keys.length)]
+  renderThemePicker()
   applyTheme(random)
-  document.querySelectorAll('.theme-dot').forEach(dot =>
-    dot.addEventListener('click', () => applyTheme(dot.dataset.theme))
-  )
+
+  document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => setThemeMode(btn.dataset.mode))
+  })
 })

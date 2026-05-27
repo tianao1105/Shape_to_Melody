@@ -65,6 +65,28 @@ class App {
     this._bindCanvasModeToggle()
     this._bindUpload()
     this._bindCollapse()
+    this._bindThemeChange()
+  }
+
+  /* Re-draw the score canvases when the user picks a new theme so the
+     piano-key colors and note blocks immediately follow the palette.
+     The drawing canvas keeps the user's painted strokes at their
+     original colors. */
+  _bindThemeChange() {
+    window.addEventListener('themechange', () => {
+      const prCanvas = document.getElementById('piano-roll-canvas')
+      const wsCanvas = document.getElementById('workspace-canvas')
+      // Score-edit view (not playing): re-render workspace once.
+      if (wsCanvas && !wsCanvas.classList.contains('hidden')) {
+        this.workspace.draw()
+      }
+      // Static pianoroll (paused mid-song, frame 0 visible): re-render.
+      // While actively playing, the animation loop's next frame will
+      // already pick up the new CSS vars — no manual call needed.
+      if (prCanvas && !prCanvas.classList.contains('hidden') && !this.player.isPlaying) {
+        this.pianoRoll.drawStatic()
+      }
+    })
   }
 
   /* ── Layer tabs ──────────────────────────────────────────── */
@@ -612,6 +634,7 @@ class App {
     if (r) r.disabled = !this.canvas.canRedo()
   }
 }
+
 
 window.addEventListener('load', () => {
   window.app = new App()
