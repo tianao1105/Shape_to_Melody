@@ -528,7 +528,7 @@ header p {
   align-items: flex-end;
   margin-bottom: -2px;
   z-index: 1;
-  padding-left: 4px;
+  padding-left: 32px;
 }
 
 #layer-tabs {
@@ -1131,6 +1131,69 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .export-row button { flex: 1; }
+
+.project-io-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+.project-io-row button {
+  flex: 1;
+  font-size: 0.76rem;
+  padding: 8px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ── Restore-last-session banner ──────────────────────────── */
+#restore-banner {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 8px 8px 16px;
+  font-family: 'Fredoka', 'Quicksand', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+  z-index: 90;
+  animation: rbSlideIn 0.32s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes rbSlideIn {
+  from { opacity: 0; transform: translate(-50%, -16px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.rb-msg { white-space: nowrap; color: var(--text); }
+.rb-btn {
+  border: none;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s;
+}
+.rb-btn:hover { transform: translateY(-1px); }
+.rb-yes {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-h));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+.rb-no {
+  background: transparent;
+  color: var(--text-muted);
+}
+.rb-no:hover { color: var(--text); background: rgba(0,0,0,0.05); }
 
 /* ── Status bar (top-center floating toast) ──────────────── */
 #status-bar {

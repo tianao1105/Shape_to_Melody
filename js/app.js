@@ -66,6 +66,176 @@ class App {
     this._bindUpload()
     this._bindCollapse()
     this._bindThemeChange()
+    this._bindAutoSave()
+    this._bindProjectIO()
+  }
+
+  /* Debounced auto-save to localStorage on any meaningful change.
+     Fires on stroke commit, settings changes, layer add/rename, theme. */
+  _bindAutoSave() {
+    let timer = null
+    this._scheduleAutoSave = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        if (typeof writeAutosave === 'function') writeAutosave(this)
+      }, 1000)
+    }
+
+    // Wrap canvas history change to also trigger save
+    const prevHook = this.canvas._onHistoryChange
+    this.canvas.setOnHistoryChange(() => {
+      if (prevHook) prevHook()
+      this._refreshUndoRedo()
+      this._scheduleAutoSave()
+    })
+
+    // Slider / select changes
+    ;['sampling-interval', 'bpm'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) el.addEventListener('input', () => this._scheduleAutoSave())
+    })
+    const scaleSel = document.getElementById('scale-select')
+    if (scaleSel) scaleSel.addEventListener('change', () => this._scheduleAutoSave())
+
+    // Theme changes
+    window.addEventListener('themechange', () => this._scheduleAutoSave())
+
+    // Convert mode buttons & instrument / volume
+    document.querySelectorAll('#convert-mode-btns .mode-btn').forEach(b =>
+      b.addEventListener('click', () => this._scheduleAutoSave()))
+    const inst = document.getElementById('layer-inst-select')
+    const vol  = document.getElementById('layer-vol')
+    if (inst) inst.addEventListener('change', () => this._scheduleAutoSave())
+    if (vol)  vol.addEventListener('input',   () => this._scheduleAutoSave())
+  }
+
+  /* "Save Project" / "Open Project" buttons in the play-controls block. */
+  _bindProjectIO() {
+    const saveBtn  = document.getElementById('btn-project-save')
+    const openBtn  = document.getElementById('btn-project-open')
+    const fileInp  = document.getElementById('project-file-input')
+    const shareBtn = document.getElementById('btn-share')
+
+    if (saveBtn) saveBtn.addEventListener('click', () => {
+      if (typeof downloadProject === 'function') downloadProject(this)
+    })
+    if (openBtn && fileInp) {
+      openBtn.addEventListener('click', () => fileInp.click())
+      fileInp.addEventListener('change', async () => {
+        const f = fileInp.files && fileInp.files[0]
+        if (!f) return
+        try {
+          const data = await readProjectFile(f)
+          await hydrateProject(this, data)
+          this._setStatus('已加载项目', '')
+          this._scheduleAutoSave()
+        } catch (e) {
+          console.error('open project failed', e)
+          this._setStatus('文件无效或损坏', 'error')
+        }
+        fileInp.value = ''
+      })
+    }
+    if (shareBtn) shareBtn.addEventListener('click', () => this._shareLink())
+  }
+
+  /* Build a share URL, copy to clipboard, and toast feedback. If the
+     work is too big for a URL, suggest the user use Save Project instead. */
+  async _shareLink() {
+    if (typeof buildShareURL !== 'function') return
+    const lm = this.layerManager
+    if (lm.layers.every(l => l.strokes.length === 0)) {
+      this._setStatus(t('share-empty'), 'error')
+      return
+    }
+    try {
+      const { url, size } = await buildShareURL(this)
+      // Try native share first (mobile), otherwise copy to clipboard.
+      if (navigator.share && /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) {
+        try {
+          await navigator.share({ title: 'Shape to Melody', url })
+          this._setStatus(t('share-shared'), '')
+          return
+        } catch (_) { /* fall through to clipboard */ }
+      }
+      try {
+        await navigator.clipboard.writeText(url)
+        this._setStatus(t('share-copied', { kb: (size / 1024).toFixed(1) }), '')
+      } catch (e) {
+        // Clipboard write blocked — show URL in a toast for manual copy
+        prompt(t('share-prompt'), url)
+      }
+    } catch (e) {
+      if (e && e.message === 'share-too-large') {
+        this._setStatus(t('share-too-large'), 'error')
+      } else {
+        console.error('share failed', e)
+        this._setStatus(t('share-failed'), 'error')
+      }
+    }
+  }
+
+  /* If the page was opened with a #s/... share fragment, hydrate from it
+     (before showing the restore banner from the previous autosave). */
+  async _maybeLoadSharedURL() {
+    if (typeof tryReadShareFromURL !== 'function') return false
+    const data = await tryReadShareFromURL()
+    if (!data) return false
+    try {
+      await hydrateProject(this, data)
+      // Share blobs ship strokes only — regenerate notes so the recipient
+      // hears the same melody without needing to click Convert.
+      const hasStrokes = this.layerManager.layers.some(l => l.strokes && l.strokes.length > 0)
+      if (hasStrokes) this._convert()
+      this._setStatus(t('share-loaded'), '')
+      // Clean the hash so a refresh doesn't re-load (autosave will pick up)
+      history.replaceState(null, '', location.pathname + location.search)
+      // If there are notes (after auto-convert), enable play / export
+      if (this.layerManager.allNotes().length > 0) {
+        document.getElementById('btn-play').disabled   = false
+        document.getElementById('btn-export').disabled = false
+      }
+      return true
+    } catch (e) {
+      console.warn('share hydrate failed', e)
+      return false
+    }
+  }
+
+  /* Restore banner — shown on load if there's a non-empty autosave. */
+  async _maybeOfferRestore() {
+    if (typeof loadAutosave !== 'function') return
+    const data = loadAutosave()
+    if (!data || isProjectEmpty(data)) return
+
+    const banner = document.createElement('div')
+    banner.id = 'restore-banner'
+    const when = Math.max(1, Math.round((Date.now() - (data.savedAt || Date.now())) / 60000))
+    const lang = (typeof _lang === 'string') ? _lang : 'zh'
+    const T = lang === 'en'
+      ? { msg: `Restore last session (${when} min ago)?`, yes: 'Restore', no: 'Discard' }
+      : { msg: `恢复上次作品？（${when} 分钟前）`,           yes: '恢复',     no: '不用' }
+    banner.innerHTML = `
+      <span class="rb-msg">${T.msg}</span>
+      <button class="rb-btn rb-yes">${T.yes}</button>
+      <button class="rb-btn rb-no">${T.no}</button>
+    `
+    document.body.appendChild(banner)
+    banner.querySelector('.rb-yes').addEventListener('click', async () => {
+      banner.remove()
+      try {
+        await hydrateProject(this, data)
+        this._setStatus('已恢复上次作品', '')
+      } catch (e) {
+        console.error('restore failed', e)
+      }
+    })
+    banner.querySelector('.rb-no').addEventListener('click', () => {
+      banner.remove()
+      if (typeof clearAutosave === 'function') clearAutosave()
+    })
+    // Auto-dismiss after 12s
+    setTimeout(() => { if (banner.parentNode) banner.remove() }, 12000)
   }
 
   /* Re-draw the score canvases when the user picks a new theme so the
@@ -666,12 +836,22 @@ class App {
   _refreshUndoRedo() {
     const u = document.getElementById('btn-undo')
     const r = document.getElementById('btn-redo')
+    if (u) u.disabled = !this.canvas.canUndo()
     if (r) r.disabled = !this.canvas.canRedo()
   }
 }
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   window.app = new App()
+
+  // 1. If opened via share link, hydrate from URL fragment first.
+  //    A successful share-load suppresses the autosave restore banner.
+  const sharedLoaded = await window.app._maybeLoadSharedURL()
+
+  // 2. Otherwise offer to restore the last autosave (no-op if empty).
+  if (!sharedLoaded) {
+    setTimeout(() => { window.app._maybeOfferRestore() }, 1500)
+  }
 
   // Opening animation, then transparent tutorial overlay
   const intro = new IntroAnimation()
@@ -693,7 +873,6 @@ window.addEventListener('load', () => {
     })
   }
 
-  // Update help button tooltip when language changes
   const langBtn = document.getElementById('lang-toggle')
   if (langBtn && help) {
     const refreshHelpTip = () => { help.title = (typeof t === 'function') ? t('tut-help-tip') : '重新观看教程' }
