@@ -94,15 +94,6 @@ class Workspace {
       })
     }
 
-    // Empty hint
-    if (this.layers.every(l => l.notes.length === 0)) {
-      ctx.fillStyle    = c.textMuted
-      ctx.font         = '13px sans-serif'
-      ctx.textAlign    = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('先转换图层，再来这里编辑', pw + rollW / 2, H / 2)
-    }
-
     this._drawPianoKeys(c)
 
     // Separator

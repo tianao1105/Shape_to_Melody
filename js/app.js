@@ -502,19 +502,55 @@ class App {
   _bindPartialBand() {
     const band      = document.getElementById('partial-band')
     const container = document.getElementById('canvas-container')
+    const MIN_H     = 24
+
+    let mode        = null
+    let startY      = 0
+    let startTop    = 0
+    let startHeight = 0
+
     band.addEventListener('mousedown', e => {
+      const cls = e.target.classList
+      if      (cls.contains('band-handle-top'))    mode = 'resize-top'
+      else if (cls.contains('band-handle-bottom')) mode = 'resize-bottom'
+      else                                         mode = 'move'
+
       this._partialDragging = true
-      this._bandStartY   = e.clientY
-      this._bandStartTop = band.offsetTop
+      startY      = e.clientY
+      startTop    = band.offsetTop
+      startHeight = band.offsetHeight
       e.preventDefault()
+      e.stopPropagation()
     })
+
     document.addEventListener('mousemove', e => {
       if (!this._partialDragging) return
-      const maxTop = container.clientHeight - band.offsetHeight
-      const newTop = Math.max(0, Math.min(maxTop, this._bandStartTop + e.clientY - this._bandStartY))
-      band.style.top = newTop + 'px'; band.style.transform = 'none'
+      const dy   = e.clientY - startY
+      const maxH = container.clientHeight
+      let newTop = startTop
+      let newH   = startHeight
+
+      if (mode === 'move') {
+        newTop = Math.max(0, Math.min(maxH - startHeight, startTop + dy))
+      } else if (mode === 'resize-top') {
+        // Top handle: top moves with cursor, height shrinks/grows opposite.
+        const desiredTop = startTop + dy
+        newTop = Math.max(0, Math.min(startTop + startHeight - MIN_H, desiredTop))
+        newH   = startHeight - (newTop - startTop)
+      } else if (mode === 'resize-bottom') {
+        // Bottom handle: top stays, height tracks cursor.
+        newH = Math.max(MIN_H, Math.min(maxH - startTop, startHeight + dy))
+      }
+
+      band.style.top       = newTop + 'px'
+      band.style.height    = newH + 'px'
+      band.style.transform = 'none'
     })
-    document.addEventListener('mouseup', () => { this._partialDragging = false })
+
+    document.addEventListener('mouseup', () => {
+      this._partialDragging = false
+      mode = null
+    })
   }
 
   _togglePartialOverlay(show) {
@@ -630,11 +666,9 @@ class App {
   _refreshUndoRedo() {
     const u = document.getElementById('btn-undo')
     const r = document.getElementById('btn-redo')
-    if (u) u.disabled = !this.canvas.canUndo()
     if (r) r.disabled = !this.canvas.canRedo()
   }
 }
-
 
 window.addEventListener('load', () => {
   window.app = new App()

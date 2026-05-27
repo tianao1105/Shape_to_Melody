@@ -330,10 +330,8 @@ header p {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow:
-    -4px 4px 12px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  transition: color 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: none;
+  transition: color 0.15s, transform 0.15s;
 }
 
 .mode-tab svg {
@@ -351,9 +349,6 @@ header p {
 .mode-tab.active {
   color: var(--accent);
   font-weight: 700;
-  box-shadow:
-    -6px 4px 16px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .view-btn {
@@ -370,8 +365,8 @@ header p {
   text-orientation: mixed;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.05);
-  transition: color 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: none;
+  transition: color 0.15s, transform 0.15s;
 }
 
 .view-btn:hover {
@@ -381,7 +376,6 @@ header p {
 
 .view-btn.active {
   color: var(--accent);
-  box-shadow: 6px 4px 16px rgba(0, 0, 0, 0.08);
   font-weight: 700;
 }
 
@@ -682,7 +676,7 @@ header p {
   background: rgba(240, 135, 102, 0.14);
   border-top: 2px solid var(--accent);
   border-bottom: 2px solid var(--accent);
-  cursor: ns-resize;
+  cursor: move;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -697,6 +691,33 @@ header p {
   color: var(--accent);
   user-select: none;
   pointer-events: none;
+}
+
+.band-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.band-handle-top    { top: -7px; }
+.band-handle-bottom { bottom: -7px; }
+.band-handle::after {
+  content: '';
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.7;
+  transition: opacity 0.15s, width 0.15s;
+}
+.band-handle:hover::after {
+  opacity: 1;
+  width: 64px;
 }
 
 .hidden { display: none !important; }
