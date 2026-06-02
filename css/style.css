@@ -52,6 +52,7 @@ header {
   gap: 14px;
   padding: 14px 22px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 header h1 {
@@ -290,16 +291,40 @@ header p {
   flex-direction: column;
   flex: 1;
   max-width: 100%;
+  min-height: 0;
 }
 
-/* View toggle — vertical bookmark tabs on right edge */
+/* Row that holds: mode-toggle | canvas-container | view-toggle
+   Putting the toggles in here (instead of next to canvas-wrap) lets them
+   share the row's align-items: center anchor with the canvas, so the
+   bookmark tabs stay vertically centered on the actual canvas even when
+   the layer-bar above takes up some height. */
+#canvas-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Column with layer-bar + canvas-container — its width matches the
+   canvas, so the layer tabs above never extend past the canvas edges. */
+#canvas-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+#canvas-col #canvas-container { flex: 1; min-width: 0; }
+
+/* View toggle — vertical bookmark tabs on right edge of canvas */
 #view-toggle {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  align-self: center;
   margin-left: 4px;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 /* Mode toggle — vertical bookmark tabs on LEFT edge (mirror of view-toggle) */
@@ -307,20 +332,22 @@ header p {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  align-self: center;
   margin-right: 4px;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .mode-tab {
   background: var(--surface);
   border: none;
   color: var(--text-muted);
-  padding: 22px 7px;
+  /* Vertical padding and font scale with viewport so the bookmark tabs
+     shrink alongside a narrower canvas instead of looking oversized. */
+  padding: clamp(13px, 2.6vw, 22px) clamp(5px, 0.8vw, 7px);
   border-radius: 14px 0 0 14px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.74rem;
+  font-size: clamp(0.62rem, 1.2vw, 0.74rem);
   font-weight: 600;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -329,14 +356,14 @@ header p {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: clamp(5px, 1vw, 8px);
   box-shadow: none;
   transition: color 0.15s, transform 0.15s;
 }
 
 .mode-tab svg {
-  width: 16px;
-  height: 16px;
+  width: clamp(12px, 1.6vw, 16px);
+  height: clamp(12px, 1.6vw, 16px);
   transform: rotate(0deg);
   flex-shrink: 0;
 }
@@ -355,11 +382,11 @@ header p {
   background: var(--surface);
   border: none;
   color: var(--text-muted);
-  padding: 22px 7px;
+  padding: clamp(13px, 2.6vw, 22px) clamp(5px, 0.8vw, 7px);
   border-radius: 0 14px 14px 0;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.74rem;
+  font-size: clamp(0.62rem, 1.2vw, 0.74rem);
   font-weight: 600;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -402,17 +429,30 @@ header p {
   align-items: center;
   justify-content: center;
   gap: 18px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.25));
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  /* Theme-aware frosted tint — uses --surface so the dropzone reads as
+     the same color family as the current palette (noir/jade/forest all
+     get their own surface color instead of a hard-coded white wash). */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 72%, transparent),
+    color-mix(in srgb, var(--surface) 38%, transparent)
+  );
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
   cursor: pointer;
   z-index: 5;
   outline: none;
-  transition: background 0.2s;
+  transition: background 0.2s, backdrop-filter 0.2s;
 }
 
 #upload-dropzone.drag-over {
-  background: linear-gradient(135deg, rgba(240,135,102,0.18), rgba(240,135,102,0.06));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 28%, transparent),
+    color-mix(in srgb, var(--accent) 10%, transparent)
+  );
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
 }
 
 .dz-plus {
@@ -528,7 +568,7 @@ header p {
   align-items: flex-end;
   margin-bottom: -2px;
   z-index: 1;
-  padding-left: 32px;
+  padding-left: 10px;
 }
 
 #layer-tabs {
@@ -1147,6 +1187,69 @@ select:focus { outline: none; border-color: var(--accent); }
   gap: 4px;
 }
 
+/* ── Confirm dialog (Convert overwrite, etc.) ────────────── */
+#confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: cdFadeIn 0.18s ease-out;
+}
+@keyframes cdFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.confirm-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  padding: 22px 22px 18px;
+  max-width: min(92vw, 380px);
+  font-family: 'Fredoka', 'Quicksand', sans-serif;
+  animation: cdScale 0.22s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes cdScale {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.confirm-msg {
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.confirm-btn {
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s, box-shadow 0.12s;
+}
+.confirm-btn:hover { transform: translateY(-1px); }
+.confirm-no {
+  background: transparent;
+  color: var(--text-muted);
+}
+.confirm-no:hover { color: var(--text); background: rgba(0, 0, 0, 0.05); }
+.confirm-yes {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-h));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+.confirm-yes:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
+
 /* ── Restore-last-session banner ──────────────────────────── */
 #restore-banner {
   position: fixed;
@@ -1571,22 +1674,45 @@ select:focus { outline: none; border-color: var(--accent); }
    so we never touch the target element's CSS or its stacking context. */
 
 /* ── Responsive ───────────────────────────────────────────── */
+/* iPad landscape territory (1024-1100px wide). Without this breakpoint
+   the canvas gets pinched between 200px sidebars and only has ~556px to
+   work with — feels cramped given 9:5 aspect ratio.  */
+@media (max-width: 1100px) {
+  #sidebar-left,
+  #sidebar-right {
+    width: 175px;
+    gap: 11px;
+  }
+  #main { padding: 4px 16px 16px; gap: 12px; }
+  .panel { padding: 12px 13px; }
+}
+
 @media (max-width: 960px) {
   #sidebar-left,
   #sidebar-right {
-    width: 170px;
+    width: 160px;
     gap: 10px;
   }
-  .panel { padding: 11px 13px; }
+  #main { padding: 4px 14px 14px; gap: 10px; }
+  .panel { padding: 10px 12px; }
+}
+
+@media (max-width: 820px) {
+  /* iPad portrait (768px-834px) — sidebars get tightest here so the
+     canvas keeps a usable footprint. */
+  #sidebar-left,
+  #sidebar-right { width: 142px; }
+  .panel  { padding: 10px 11px; }
+  .panel h3 { font-size: 0.72rem; }
 }
 
 @media (max-width: 720px) {
   #sidebar-left,
   #sidebar-right {
-    width: 140px;
-    gap: 10px;
+    width: 134px;
+    gap: 8px;
   }
-  .panel { padding: 10px 11px; }
+  .panel { padding: 9px 10px; }
   .mode-btn { font-size: 0.78rem; padding: 8px 10px; }
   .tool-btn { font-size: 0.70rem; padding: 7px 4px 5px; }
   .tool-btn svg { width: 18px; height: 18px; }
@@ -1617,4 +1743,38 @@ select:focus { outline: none; border-color: var(--accent); }
   #play-controls { margin-top: 0; flex-direction: row; flex-wrap: wrap; width: 100%; }
   #play-controls button { flex: 1; min-width: 80px; }
   #canvas-area { padding: 8px 0; }
+
+  /* Header: items wrap to a second row instead of overflowing.  Theme
+     picker + help/lang sit on the right and wrap together. */
+  header { padding: 10px 14px; gap: 8px; row-gap: 8px; }
+  header h1 { font-size: 1rem; }
+  #mode-toggle-group { margin-left: auto; margin-right: 0; padding: 2px; gap: 0; }
+  .mode-toggle-btn   { width: 24px; height: 24px; }
+  .mode-toggle-btn svg { width: 13px; height: 13px; }
+  #theme-picker      { gap: 5px; padding: 4px 7px; }
+  .theme-dot         { width: 14px; height: 14px; border-width: 1.5px; }
+  #btn-help          { width: 28px; height: 28px; }
+  #btn-help svg      { width: 14px; height: 14px; }
+  #lang-toggle       { font-size: 0.72rem; padding: 6px 10px; }
+
+
+  /* Intro animation: shrink heavily so 21-letter title fits.  Letters
+     wrap to multiple lines if needed; piano stays centered. */
+  .intro-words {
+    flex-wrap: wrap;
+    row-gap: 0.1em;
+    font-size: clamp(14px, 6.5vw, 36px);
+    padding: 0 4vw;
+  }
+  .intro-letter { width: 0.95em; height: 1.35em; }
+  .intro-letter.space { width: 0.4em; }
+}
+
+@media (max-width: 380px) {
+  /* Extra-narrow phones: drop the h1 to a single-line short title and
+     shrink theme picker even more so it sits next to the controls. */
+  header h1 { font-size: 0.9rem; }
+  #theme-picker { gap: 4px; padding: 3px 6px; }
+  .theme-dot { width: 12px; height: 12px; }
+  .intro-words { font-size: clamp(12px, 6vw, 28px); }
 }

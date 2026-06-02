@@ -43,10 +43,26 @@ class Tutorial {
     skipBtn.onclick = () => this._finish()
     const nx = document.getElementById('tut-next')
     if (nx) nx.style.display = 'none'
+    // Tutorial steps assume the drawing canvas is visible. If the user
+    // triggered the tutorial from the Score view (via the ? button), the
+    // main-canvas would be display:none and its bounding rect would be
+    // 0×0 — pinning the spotlight to the screen's top-left corner.
+    this._ensureDrawingView()
     ;(async () => {
       try { await this._runFlow() } catch (e) { console.error('tutorial flow', e) }
       this._finish()
     })()
+  }
+
+  _ensureDrawingView() {
+    const app = window.app
+    if (!app || !app._switchView) return
+    try {
+      document.querySelectorAll('.view-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === 'drawing')
+      })
+      app._switchView('drawing')
+    } catch (e) { console.warn('tutorial switchToDrawing', e) }
   }
   async _runFlow() {
     this._goto(0); await this._sleep(700)
@@ -231,6 +247,20 @@ class Tutorial {
     const r   = target.getBoundingClientRect()
     const pad = s.pad ?? 6
     const rad = s.radius ?? 12
+
+    // If the target hasn't been laid out yet (display:none, font-load reflow,
+    // canvas still 0×0, etc.), the rect is all zeros and the spotlight would
+    // pin to the top-left corner. Retry once after a paint, then again on a
+    // short timer in case layout settles more slowly.
+    if (r.width < 4 || r.height < 4) {
+      if (!this._positionRetried) {
+        this._positionRetried = true
+        requestAnimationFrame(() => this._position())
+        setTimeout(() => this._position(), 120)
+      }
+      return
+    }
+    this._positionRetried = false
 
     // Position the hole + ring around the target's bounding box
     if (this.hole) {

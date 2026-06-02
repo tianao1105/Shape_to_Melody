@@ -31,7 +31,13 @@ class App {
     wsCanvas.width  = width
     wsCanvas.height = height
     this.workspace.init(wsCanvas)
-    this.workspace.onChange = () => this._refreshPianoRoll()
+    this.workspace.onChange = () => {
+      // Mark any layer whose notes were just edited so a later Convert
+      // click can warn the user that their edits will be overwritten.
+      const active = this.layerManager.active
+      if (active) active._notesEdited = true
+      this._refreshPianoRoll()
+    }
 
     // Sync all canvases on resize
     this.canvas.onResize = () => {
@@ -416,7 +422,7 @@ class App {
 
     document.getElementById('scale-select').addEventListener('change', e => {
       this.converter.setScale(e.target.value)
-      if (this.layerManager.allNotes().length > 0) this._convert()
+      if (this.layerManager.allNotes().length > 0) this._convertWithConfirmIfEdited()
     })
 
     const bpmSlider = document.getElementById('bpm')
@@ -425,7 +431,7 @@ class App {
       this.player.setBPM(Number(bpmSlider.value))
     })
 
-    document.getElementById('btn-convert').addEventListener('click', () => this._convert())
+    document.getElementById('btn-convert').addEventListener('click', () => this._convertWithConfirmIfEdited())
     document.getElementById('btn-play').addEventListener('click',    () => this._play())
     document.getElementById('btn-stop').addEventListener('click',    () => {
       this.player.stop()
@@ -772,6 +778,23 @@ class App {
 
   /* ── Convert ─────────────────────────────────────────────── */
 
+  /* If the user has hand-edited notes in the Score view, warn them
+     before re-running Convert (which would overwrite their edits). */
+  async _convertWithConfirmIfEdited() {
+    const hasEdits = this.layerManager.layers.some(
+      l => l._notesEdited && l.notes && l.notes.length > 0
+    )
+    if (hasEdits) {
+      const ok = await this._confirmDialog(
+        t('confirm-overwrite-msg'),
+        t('confirm-overwrite-yes'),
+        t('confirm-overwrite-no'),
+      )
+      if (!ok) return
+    }
+    this._convert()
+  }
+
   _convert() {
     const strokes = this.canvas.getStrokes()
     const { height } = this.canvas.getSize()
@@ -789,7 +812,9 @@ class App {
       return
     }
 
-    // Store notes in active layer
+    // Store notes in active layer + clear the "edited" flag everywhere
+    // (convert overwrites all layers' notes so all edit-state is gone).
+    this.layerManager.layers.forEach(l => { l._notesEdited = false })
     this.layerManager.active.notes = notes
 
     const allNotes = this.layerManager.allNotes()
@@ -831,6 +856,46 @@ class App {
     const bar = document.getElementById('status-bar')
     bar.textContent = msg
     bar.className   = type
+  }
+
+  /* Lightweight in-DOM confirm dialog returning a Promise<boolean>.
+     Used to ask before overwriting hand-edited notes on re-Convert. */
+  _confirmDialog(message, yesLabel, noLabel) {
+    return new Promise(resolve => {
+      let backdrop = document.getElementById('confirm-backdrop')
+      if (backdrop) backdrop.remove()
+      backdrop = document.createElement('div')
+      backdrop.id = 'confirm-backdrop'
+      backdrop.innerHTML = `
+        <div class="confirm-card" role="dialog" aria-modal="true">
+          <div class="confirm-msg"></div>
+          <div class="confirm-actions">
+            <button class="confirm-btn confirm-no"></button>
+            <button class="confirm-btn confirm-yes"></button>
+          </div>
+        </div>
+      `
+      backdrop.querySelector('.confirm-msg').textContent = message
+      backdrop.querySelector('.confirm-yes').textContent = yesLabel
+      backdrop.querySelector('.confirm-no').textContent  = noLabel
+      document.body.appendChild(backdrop)
+      const close = (ok) => {
+        backdrop.remove()
+        document.removeEventListener('keydown', onKey)
+        resolve(ok)
+      }
+      const onKey = (e) => {
+        if (e.key === 'Escape') close(false)
+        else if (e.key === 'Enter') close(true)
+      }
+      backdrop.querySelector('.confirm-yes').addEventListener('click', () => close(true))
+      backdrop.querySelector('.confirm-no').addEventListener('click',  () => close(false))
+      backdrop.addEventListener('click', e => {
+        if (e.target === backdrop) close(false)
+      })
+      document.addEventListener('keydown', onKey)
+      backdrop.querySelector('.confirm-yes').focus()
+    })
   }
 
   _refreshUndoRedo() {

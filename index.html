@@ -186,30 +186,34 @@
 
       <!-- Canvas area -->
       <div id="canvas-area">
-        <!-- Mode toggle: vertical bookmark tabs on the LEFT edge of canvas -->
-        <div id="mode-toggle">
-          <button class="mode-tab active" data-canvas-mode="draw">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l3.5-1L20 6.5a2.1 2.1 0 0 0-3-3L3.5 17 2.5 21z"/><path d="M14 6l3 3"/></svg>
-            <span data-i18n="tab-draw">绘画</span>
-          </button>
-          <button class="mode-tab" data-canvas-mode="upload">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span data-i18n="tab-upload">上传</span>
-          </button>
-        </div>
         <div id="canvas-wrap">
-          <div id="layer-bar">
-            <div id="layer-tabs">
-              <button id="btn-add-layer" title="Add layer">+</button>
+          <div id="canvas-row">
+            <!-- Mode toggle: vertical bookmark tabs on the LEFT edge of canvas -->
+            <div id="mode-toggle">
+              <button class="mode-tab active" data-canvas-mode="draw">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l3.5-1L20 6.5a2.1 2.1 0 0 0-3-3L3.5 17 2.5 21z"/><path d="M14 6l3 3"/></svg>
+                <span data-i18n="tab-draw">绘画</span>
+              </button>
+              <button class="mode-tab" data-canvas-mode="upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span data-i18n="tab-upload">上传</span>
+              </button>
             </div>
-            <div id="layer-props">
-              <select id="layer-inst-select"></select>
-              <span class="lp-sep"></span>
-              <label class="lp-label" for="layer-vol">Vol</label>
-              <input type="range" id="layer-vol" min="0" max="100" value="80">
-              <span id="layer-vol-val">80</span>
-            </div>
-          </div>
+            <!-- Column holding layer-bar + canvas-container together so they
+                 share the same width and neither extends past the canvas. -->
+            <div id="canvas-col">
+              <div id="layer-bar">
+                <div id="layer-tabs">
+                  <button id="btn-add-layer" title="Add layer">+</button>
+                </div>
+                <div id="layer-props">
+                  <select id="layer-inst-select"></select>
+                  <span class="lp-sep"></span>
+                  <label class="lp-label" for="layer-vol">Vol</label>
+                  <input type="range" id="layer-vol" min="0" max="100" value="80">
+                  <span id="layer-vol-val">80</span>
+                </div>
+              </div>
           <div id="canvas-container">
             <canvas id="main-canvas"></canvas>
             <canvas id="piano-roll-canvas" class="hidden"></canvas>
@@ -244,11 +248,13 @@
               </div>
             </div>
           </div>
-        </div>
-        <!-- View toggle: vertical bookmark tabs on the right edge of canvas -->
-        <div id="view-toggle">
-          <button class="view-btn active" data-view="drawing"   data-i18n="tab-drawing">画布</button>
-          <button class="view-btn"        data-view="pianoroll" data-i18n="tab-pianoroll">琴谱</button>
+            </div><!-- /canvas-col -->
+            <!-- View toggle: vertical bookmark tabs on the right edge of canvas -->
+            <div id="view-toggle">
+              <button class="view-btn active" data-view="drawing"   data-i18n="tab-drawing">画布</button>
+              <button class="view-btn"        data-view="pianoroll" data-i18n="tab-pianoroll">琴谱</button>
+            </div>
+          </div>
         </div>
       </div>
 

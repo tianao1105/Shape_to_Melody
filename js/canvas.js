@@ -396,7 +396,10 @@ class CanvasManager {
     }
     this._currentStroke = []; this._shapeStart = null
     this._snapshot = null; this._layerSnap = null; this._rainbowHue = 0
-    document.getElementById('canvas-container')?.classList.remove('has-drawn')
+    // Only flip back to the empty-state hint if every layer is truly empty.
+    // Clearing one of several layers should not re-show "draw something here"
+    // while other layers still have visible strokes.
+    this._refreshEmptyHint()
     this._notifyHistoryChange()
   }
 
